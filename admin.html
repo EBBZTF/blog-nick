@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de-CH">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin — nickberdi.ch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/admin.css">
+
+<div class="adm">
+
+  <!-- ---------- Login ---------- -->
+  <div class="login" id="login">
+    <h1>Website bearbeiten</h1>
+    <p>Anmelden, um Texte, Partner und Resultate zu ändern.</p>
+    <form id="loginForm">
+      <div class="fld"><label for="u">Benutzername</label><input type="text" id="u" autocomplete="username" required></div>
+      <div class="fld"><label for="p">Passwort</label><input type="password" id="p" autocomplete="current-password" required
+        style="width:100%;padding:9px 11px;border:1px solid #D9D5CC;background:#FCFBF9;font-family:inherit;font-size:14.5px;border-radius:2px"></div>
+      <div class="err" id="loginErr"></div>
+      <button type="submit" class="abtn abtn-g">Anmelden</button>
+    </form>
+    <p class="note" id="loginNote"></p>
+  </div>
+
+  <!-- ---------- Editor ---------- -->
+  <div id="app" hidden>
+    <div class="adm-bar" id="bar">
+      <b>ADMIN</b>
+      <span class="who" id="who"></span>
+      <span class="dirty">● nicht gespeichert</span>
+      <a class="abtn abtn-o" href="index.html" target="_blank" rel="noopener">Website ansehen</a>
+      <button class="abtn abtn-o" id="btnDownload">Datei herunterladen</button>
+      <button class="abtn abtn-g" id="btnSave">Speichern</button>
+      <button class="abtn abtn-o" id="btnLogout">Abmelden</button>
+    </div>
+
+    <div class="adm-body">
+      <nav class="adm-nav" id="tabs"></nav>
+      <main class="adm-main" id="panels"></main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="data/content.js"></script>
+<script src="js/admin.js"></script>
+</html>

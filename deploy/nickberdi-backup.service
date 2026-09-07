@@ -1,0 +1,10 @@
+# Einmaliger Sicherungslauf, wird vom Timer daneben ausgelöst.
+[Unit]
+Description=Inhalt von nickberdi.ch sichern
+
+[Service]
+Type=oneshot
+User=pi
+# Zweites Argument ergänzen, um zusätzlich auf ein NAS zu kopieren:
+#   ExecStart=/home/pi/nickberdi/deploy/backup-content.sh pi@nas:/backups/website
+ExecStart=/home/pi/nickberdi/deploy/backup-content.sh

@@ -1,0 +1,75 @@
+/* Admin-Bereich — bewusst nüchtern, damit nichts mit der Website verwechselt wird. */
+.adm{min-height:100vh;background:#F4F2ED;color:#191B1D;font-family:Barlow,system-ui,sans-serif}
+.adm *{box-sizing:border-box}
+
+.adm-bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
+  padding:12px 20px;background:#191B1D;color:#F4F2ED;border-bottom:3px solid #C39A3F}
+.adm-bar b{font-family:Archivo,sans-serif;font-size:15px;letter-spacing:.05em}
+.adm-bar .who{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:#98A0A4;margin-right:auto}
+.adm-bar .dirty{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:#C39A3F;display:none}
+.adm-bar.is-dirty .dirty{display:inline}
+
+.abtn{font-family:Archivo,sans-serif;font-weight:700;font-size:13px;padding:8px 14px;border-radius:2px;
+  border:1px solid transparent;cursor:pointer;text-decoration:none;display:inline-block;background:none;color:inherit}
+.abtn-g{background:#C39A3F;color:#16181A}
+.abtn-o{border-color:#5A6266;color:#F4F2ED}
+.abtn-l{border-color:#D9D5CC;color:#33383B;background:#FCFBF9}
+.abtn-x{border-color:#D9D5CC;color:#C0272D;background:#FCFBF9;font-size:12px;padding:5px 10px}
+.abtn:disabled{opacity:.45;cursor:default}
+
+.adm-body{display:grid;grid-template-columns:210px 1fr;gap:0;align-items:start}
+.adm-nav{position:sticky;top:52px;padding:18px 0;border-right:1px solid #D9D5CC;min-height:calc(100vh - 52px)}
+.adm-nav button{display:block;width:100%;text-align:left;padding:8px 20px;border:0;background:none;
+  cursor:pointer;font-size:14px;color:#4E5357;border-left:3px solid transparent}
+.adm-nav button:hover{background:#FCFBF9}
+.adm-nav button.on{color:#191B1D;font-weight:600;border-left-color:#C39A3F;background:#FCFBF9}
+
+.adm-main{padding:24px 26px 80px;max-width:820px}
+.adm-main h2{font-family:Archivo,sans-serif;font-size:24px;margin:0 0 4px}
+.adm-main .hint{font-size:13.5px;color:#7C8388;margin:0 0 20px;max-width:64ch}
+.panel{display:none}
+.panel.on{display:block}
+
+.fld{margin-bottom:16px}
+.fld label{display:block;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.05em;
+  text-transform:uppercase;color:#7C8388;margin-bottom:5px}
+.fld input[type=text],.fld textarea,.fld select{width:100%;padding:9px 11px;border:1px solid #D9D5CC;
+  background:#FCFBF9;font-family:inherit;font-size:14.5px;color:#191B1D;border-radius:2px}
+.fld textarea{resize:vertical;line-height:1.5}
+.fld input:focus,.fld textarea:focus{outline:2px solid #C39A3F;outline-offset:-1px}
+.fld .sub{font-size:12px;color:#9AA0A4;margin-top:4px}
+.fld.check{display:flex;align-items:center;gap:8px}
+.fld.check label{margin:0;text-transform:none;letter-spacing:0;font-size:13.5px;
+  font-family:inherit;color:#33383B}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.card{border:1px solid #D9D5CC;background:#FCFBF9;padding:16px;margin-bottom:12px}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.card-head b{font-family:Archivo,sans-serif;font-size:15px;margin-right:auto}
+.card-head .ord{font-family:"IBM Plex Mono",monospace;font-size:11px;color:#9AA0A4}
+.listempty{border:1px dashed #D9D5CC;padding:18px;text-align:center;color:#7C8388;font-size:14px;margin-bottom:12px}
+
+.login{max-width:340px;margin:0 auto;padding:14vh 20px 0}
+.login h1{font-family:Archivo,sans-serif;font-size:26px;margin:0 0 4px}
+.login p{font-size:14px;color:#7C8388;margin:0 0 22px}
+.login .err{color:#C0272D;font-size:13.5px;min-height:20px;margin:2px 0 8px}
+.login .abtn{width:100%;text-align:center}
+.note{font-size:12.5px;color:#7C8388;line-height:1.6;margin-top:20px;border-top:1px solid #D9D5CC;padding-top:14px}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#191B1D;color:#F4F2ED;
+  padding:11px 18px;border-left:3px solid #C39A3F;font-size:14px;opacity:0;pointer-events:none;transition:opacity .18s}
+.toast.on{opacity:1}
+.toast.bad{border-left-color:#C0272D}
+
+@media (max-width:760px){
+  .adm-body{grid-template-columns:1fr}
+  .adm-nav{position:static;min-height:0;border-right:0;border-bottom:1px solid #D9D5CC;
+    display:flex;overflow-x:auto;padding:8px 0}
+  .adm-nav button{white-space:nowrap;border-left:0;border-bottom:3px solid transparent;width:auto}
+  .adm-nav button.on{border-left:0;border-bottom-color:#C39A3F}
+  .row2{grid-template-columns:1fr}
+}
+
+/* .abtn setzt display:inline-block — sonst bliebe ein [hidden] Knopf sichtbar. */
+.adm [hidden]{display:none !important}

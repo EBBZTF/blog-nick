@@ -1,0 +1,71 @@
+/* Discipline badges, setup cards and run tables */
+/* discipline badges */
+.disz{display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  border:1px solid var(--line);background:var(--chalk);border-radius:999px;padding:2px 9px 2px 7px;white-space:nowrap;color:#4E5357}
+.disz:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--stone,#888)}
+.disz.berg:before{background:var(--needle)}
+.disz.rallye:before{background:var(--m3)}
+.disz.dk{background:transparent;border-color:#4A5256;color:#B4BABD}
+.tbl .disz{font-size:10.5px}
+.setups{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:18px}
+.setup{border:1px solid #3E4548;padding:15px 16px}
+.setup h3{font-size:18px;margin-bottom:6px}
+.setup p{font-size:13.5px;color:#A9B0B4;margin:0}
+.setup .disz{margin-bottom:9px}
+.runs{display:flex;flex-wrap:wrap;gap:0;margin-top:11px;border:1px solid var(--line);background:var(--alpine)}
+.runs div{padding:7px 13px;border-right:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+.runs div:last-child{border-right:none}
+.runs i{font-style:normal;display:block;font-size:10px;color:#7A7A72}
+.runs .best{background:var(--chalk);color:var(--m3);font-weight:500}
+@media(max-width:780px){.setups{grid-template-columns:1fr}}
+
+/* ---------- empty states (nothing driven / nothing written yet) ---------- */
+.empty{border:1px dashed var(--line);background:var(--chalk);padding:22px 20px;margin-top:6px}
+.empty b{display:block;font-family:Archivo,sans-serif;font-size:19px;margin-bottom:5px}
+.empty p{margin:0;font-size:14.5px;color:#4E5357;max-width:62ch}
+.sec.dk .empty{border-color:#3E4548;background:#202325}
+.sec.dk .empty p{color:#A9B0B4}
+
+/* ---------- partner packages: extra note under the cards ---------- */
+.pkg-note{margin-top:16px;font-size:14.5px;color:#4E5357}
+.pkg .kind{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:#7C8388;margin-bottom:4px;display:block}
+
+/* ---------- journal post list ---------- */
+.posts{display:grid;gap:14px;margin-top:16px}
+.post{border:1px solid var(--line);background:var(--chalk);padding:17px}
+.post h3{font-size:20px;margin:6px 0 4px}
+.post .dateline{font-family:"IBM Plex Mono",monospace;font-size:12px;color:#7C8388}
+.post p{margin:6px 0 0;font-size:14.5px;color:#4E5357}
+
+/* ---------- car map: blank car with free advertising surfaces ---------- */
+.carmap{border:1px solid var(--line);background:var(--alpine);margin:18px 0}
+.carmap-head{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.07em;
+  text-transform:uppercase;color:#7C8388;padding:9px 14px;border-bottom:1px solid var(--line)}
+.carmap svg{display:block;width:100%;height:auto;padding:10px 6px}
+.carmap .shell{fill:#FFF;stroke:var(--anthracite);stroke-width:2.4;stroke-linejoin:round}
+.carmap .arch{fill:var(--alpine);stroke:var(--anthracite);stroke-width:2.4}
+.carmap .glass{fill:#DFE4E6;stroke:var(--anthracite);stroke-width:1.8}
+.carmap .shut,.carmap .trim{fill:none;stroke:#A9AEA6;stroke-width:1.6}
+.carmap .lamp,.carmap .handle{fill:#C9C6BE;stroke:var(--anthracite);stroke-width:1.4}
+.carmap .tyre{fill:#2A2E31}
+.carmap .rim{fill:#C9C6BE;stroke:var(--anthracite);stroke-width:1.6}
+.carmap .ground{stroke:var(--line);stroke-width:2}
+.carmap .spot rect,.carmap .spot polygon{fill:rgba(195,154,63,.16);stroke:var(--bbs);
+  stroke-width:2.2;stroke-dasharray:7 5}
+.carmap .spot circle{fill:var(--bbs)}
+.carmap .spot text{fill:#16181A;font-family:Archivo,sans-serif;font-weight:800;font-size:16px;text-anchor:middle}
+.carmap .spot.taken rect,.carmap .spot.taken polygon{fill:rgba(51,56,59,.10);stroke:#9AA0A4;stroke-dasharray:none}
+.carmap .spot.taken circle{fill:#9AA0A4}
+
+.spotlist{list-style:none;margin:18px 0 0;padding:0;display:grid;
+  grid-template-columns:repeat(2,1fr);gap:8px 18px;counter-reset:none}
+.spotlist li{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:7px 0;font-size:14.5px}
+.spotlist .num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--bbs);color:#16181A;
+  font-family:Archivo,sans-serif;font-weight:800;font-size:13px;display:grid;place-items:center}
+.spotlist b{font-weight:600;margin-right:auto}
+.spotlist i{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--m3)}
+.spotlist li.taken .num{background:#9AA0A4}
+.spotlist li.taken i{color:#7C8388}
+
+@media (max-width:760px){ .spotlist{grid-template-columns:1fr} }

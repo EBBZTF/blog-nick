@@ -1,0 +1,44 @@
+# systemd-Unit für den Website-Server.
+#
+#   sudo cp deploy/nickberdi.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now nickberdi
+#   systemctl status nickberdi
+#
+# Pfade und Benutzer unten anpassen, falls das Projekt woanders liegt.
+
+[Unit]
+Description=nickberdi.ch — Website und Admin-Bereich
+Documentation=file:///home/pi/nickberdi/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/nickberdi
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+
+# Caddy nimmt 80/443 entgegen und reicht hierher weiter — der Node-Server
+# bleibt deshalb bewusst auf localhost und ist von aussen nicht direkt erreichbar.
+Environment=HOST=127.0.0.1
+Environment=PORT=4000
+Environment=NODE_ENV=production
+
+# Absicherung: Der Prozess darf ausser data/ nichts auf der Platte verändern.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/pi/nickberdi/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+/* Design tokens, reset and shared type helpers */
+:root{
+  --alpine:#F4F2ED;      /* Alpinweiss body */
+  --chalk:#FCFBF9;
+  --anthracite:#191B1D;  /* dash + trim */
+  --graphite:#33383B;
+  --bbs:#C39A3F;         /* cross-spoke gold */
+  --needle:#E4762B;      /* tacho needle */
+  --dusk:#4C6E8C;
+  --line:#D9D5CC;
+  --m1:#4E9AD1; --m2:#16326B; --m3:#C0272D;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--alpine);color:var(--anthracite);font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+

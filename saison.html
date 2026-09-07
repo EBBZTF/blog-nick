@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de-CH">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saison — nickberdi.ch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/components.css">
+
+<div class="site">
+  <div class="tri"><i></i><i></i><i></i></div>
+  <nav class="nav">
+    <div class="mark">
+      <svg class="kid" viewBox="0 0 34 18" width="30" height="16" aria-hidden="true"><rect x=".8" y=".8" width="14.6" height="16.4" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="18.6" y=".8" width="14.6" height="16.4" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.2 2.4v13.2M8.4 2.4v13.2M11.6 2.4v13.2M22.8 2.4v13.2M26 2.4v13.2M29.2 2.4v13.2" stroke="currentColor" stroke-width=".9" opacity=".5"/></svg>
+      <b data-cms="site.name">NICK BERDI</b><span data-cms="site.tag">E30</span>
+    </div>
+    <a href="index.html">Start</a><a href="das-auto.html">Das Auto</a><a href="saison.html" class="on">Saison</a><a href="galerie.html">Galerie</a><a href="journal.html">Journal</a>
+    <a href="partner.html" class="cta">Partner</a>
+  </nav>
+  <section class="sec"><div class="wrap">
+    <h2 style="font-size:33px">Saison &amp; Resultate</h2>
+    <p class="lede" data-cms="saison.lede">Jeder Start, über alle Disziplinen, mit Zeiten wo vorhanden. Die erste Saison steht noch bevor.</p>
+    <div class="stats">
+      <div class="stat"><b data-cms="saison.statStarts">—</b><span>Starts</span></div>
+      <div class="stat"><b data-cms="saison.statPodeste">—</b><span>Klassenpodeste</span></div>
+      <div class="stat"><b data-cms="saison.statSiege">—</b><span>Klassensiege</span></div>
+    </div>
+
+    <div class="chips">
+      <span class="chip on">Alle Disziplinen</span><span class="chip">Rallye</span><span class="chip">Bergrennen</span>
+    </div>
+
+    <table class="tbl" data-events-table style="display:none">
+      <thead><tr><th>Datum</th><th>Veranstaltung</th><th>Disziplin</th><th>Klasse</th><th>Gesamt</th><th>Bestzeit</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="empty" data-events-empty>
+      <b>Noch keine Resultate</b>
+      <p>Es wurde noch kein Rennen gefahren. Die Tabelle füllt sich, sobald der erste Start absolviert ist — Termine und Ergebnisse werden im Admin-Bereich gepflegt.</p>
+    </div>
+  </div></section>
+
+  <section class="sec dk"><div class="wrap">
+    <h2>Wie es dazu kam</h2>
+    <p class="lede" data-cms="saison.wegLede">Vom Simulator auf die echte Strecke — und von dort in den eigenen Rennwagen.</p>
+    <ul class="tl" style="border-color:#3E4548" data-timeline></ul>
+  </div></section>
+  <footer class="foot"><div class="wrap cols">
+    <div><b style="font-family:Archivo,sans-serif;font-size:15px;color:#E4E8EA" data-cms="site.footerBrand">NICK BERDI · E30</b>
+      <p style="margin:6px 0 0;max-width:34ch" data-cms="site.footerText">Junioren-Motorsport, Thurgau. Bergrennen und Rallye mit einem BMW E30 von 1990.</p></div>
+    <div><a href="das-auto.html">Das Auto</a><br><a href="saison.html">Saison</a><br><a href="galerie.html">Galerie</a><br><a href="journal.html">Journal</a><br><a href="kontakt.html">Kontakt</a></div>
+    <div>Instagram<br>YouTube<br><a href="#">Unterlagen (PDF)</a><br><a href="#">Impressum</a></div>
+  </div></footer>
+  <div class="tri"><i></i><i></i><i></i></div>
+</div>
+
+<script src="data/content.js"></script>
+<script src="js/content.js"></script>
+<script src="js/site.js"></script>
+
+</html>

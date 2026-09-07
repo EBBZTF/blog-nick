@@ -1,0 +1,80 @@
+{
+  "_readme": [
+    "Ein Eintrag pro Veranstaltung. Alle Disziplinen teilen sich den gleichen Kern;",
+    "was sich unterscheidet, steht in 'runs' — deshalb muss beim Wechsel der",
+    "Disziplin nichts umgebaut werden. Neue Disziplin? Nur einen Wert in",
+    "'disziplin' ergänzen und die Badge-Farbe im CSS setzen.",
+    "Die React-Komponente wählt anhand von 'disziplin' das passende Zeitenlayout."
+  ],
+
+  "disziplinen": ["slalom", "bergrennen", "rallye", "trackday", "kart"],
+
+  "events": [
+    {
+      "slug": "hemberg-2026",
+      "datum": "2026-06-07",
+      "name": "Bergrennen Hemberg",
+      "disziplin": "bergrennen",
+      "serie": "Junioren-Meisterschaft Berg/Slalom",
+      "ort": "Hemberg SG",
+      "belag": "asphalt",
+      "status": "beendet",
+
+      "klasse": { "name": "Tourenwagen bis 2.5L", "rang": 1, "von": 11 },
+      "gesamt": { "rang": 9, "von": 71 },
+
+      "runs": [
+        { "label": "1. Training",  "zeit": "2:18.4", "gewertet": false },
+        { "label": "2. Training",  "zeit": "2:15.9", "gewertet": false },
+        { "label": "1. Rennlauf",  "zeit": "2:14.8", "gewertet": true  },
+        { "label": "2. Rennlauf",  "zeit": "2:12.3", "gewertet": true, "beste": true }
+      ],
+      "abstand": { "label": "Vorsprung auf Platz 2", "wert": "1.9" },
+
+      "punkte": 18,
+      "ergebnis_pdf": "https://…/rangliste.pdf",
+      "bericht": "journal/hemberg-2026",
+      "fotos": ["hemberg-kehre4", "hemberg-podest"],
+      "notiz": "Erster Klassensieg."
+    },
+
+    {
+      "slug": "frauenfeld-2026",
+      "datum": "2026-04-19",
+      "name": "Slalom Frauenfeld",
+      "disziplin": "slalom",
+      "serie": "Junioren-Meisterschaft Berg/Slalom",
+      "ort": "Frauenfeld TG",
+      "belag": "asphalt",
+      "status": "beendet",
+
+      "klasse": { "name": "Gruppe 1, bis 2.5L", "rang": 2, "von": 9 },
+      "gesamt": { "rang": 14, "von": 88 },
+
+      "runs": [
+        { "label": "1. Lauf", "zeit": "1:04.1", "strafe": 0, "gewertet": true },
+        { "label": "2. Lauf", "zeit": "1:02.4", "strafe": 0, "gewertet": true, "beste": true },
+        { "label": "3. Lauf", "zeit": "1:01.8", "strafe": 4, "gewertet": true,
+          "notiz": "Zwei Torfehler, +4 s" }
+      ],
+      "abstand": { "label": "Rückstand auf Platz 1", "wert": "0.7" },
+      "punkte": 15,
+      "ergebnis_pdf": "https://…/rangliste.pdf"
+    },
+
+    {
+      "slug": "ticino-2026",
+      "datum": "2026-09-18",
+      "name": "Rallye del Ticino",
+      "disziplin": "rallye",
+      "ort": "Balerna TI",
+      "belag": "asphalt",
+      "status": "geplant",
+
+      "klasse": null,
+      "gesamt": null,
+      "runs": [],
+      "notiz": "Nennung offen, abhängig vom Budget."
+    }
+  ]
+}
