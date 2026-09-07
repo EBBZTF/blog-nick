@@ -1,0 +1,10 @@
+# Zugangsdaten und Sicherungen bleiben auf der Pi, nie im Repository.
+data/admin-users.json
+data/backups/
+data/*.tmp
+
+# IDE
+.idea/
+
+# Betriebssystem
+.DS_Store

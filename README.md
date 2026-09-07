@@ -96,16 +96,19 @@ in allen Dateien ergänzt werden.
 
 ## Betrieb auf der Raspberry Pi
 
-Die Website läuft auf der Pi als Dienst, davor sitzt Caddy und kümmert sich um HTTPS.
-Alle Vorlagen dafür liegen in `deploy/`.
+Die Website läuft auf der Pi als Dienst. Davor sitzt Caddy, und ganz vorne ein
+Cloudflare Tunnel, der HTTPS und die Erreichbarkeit übernimmt. Alle Vorlagen
+liegen in `deploy/`.
 
 ```
-Internet ──► Router (Port 80 + 443) ──► Caddy ──► node server.js
-                                        HTTPS     127.0.0.1:4000
+Internet ──► Cloudflare ──► Tunnel ──► Caddy ──► node server.js
+             Edge/TLS       ausgehend  :8080     127.0.0.1:4000
 ```
 
-Der Node-Server bleibt bewusst auf `127.0.0.1` und ist von aussen nie direkt erreichbar —
-alles läuft über Caddy. `HOST=0.0.0.0` wäre nur ohne Reverse Proxy nötig.
+Der Tunnel wird **von der Pi nach aussen** aufgebaut und offen gehalten. Es gibt
+damit keine Portweiterleitung, kein DDNS, kein Zertifikat zu verwalten, und die
+IP-Adresse des Anschlusses steht nicht im Netz. Node und Caddy lauschen beide nur
+auf `127.0.0.1` und sind von aussen nie direkt erreichbar.
 
 ### 1. Voraussetzungen
 
@@ -127,31 +130,94 @@ systemctl status nickberdi
 `enable` sorgt dafür, dass der Dienst nach einem Stromausfall von selbst wieder
 hochkommt. Logs: `journalctl -u nickberdi -f`.
 
-### 3. Domain und Zertifikat
+### 3. Cloudflare Tunnel einrichten
 
-Der Anschluss zu Hause hat in der Regel eine wechselnde IP-Adresse. Damit
-`nickberdi.ch` trotzdem immer auf die Pi zeigt, braucht es **DDNS**: einen kleinen
-Dienst auf der Pi, der dem DNS-Anbieter die neue Adresse meldet, sobald sie sich
-ändert. Viele Registrare bieten das an (`ddclient` ist der übliche Weg), manche
-Router können es selbst. Ohne DDNS ist die Seite nach dem nächsten IP-Wechsel des
-Providers nicht mehr erreichbar.
+Die Domain liegt bei Cloudflare, Zone und Nameserver bestehen also schon.
 
-Im Router **Port 80 und 443** auf die Pi weiterleiten. Port 80 wird gebraucht,
-auch wenn die Seite nur über HTTPS läuft — Let's Encrypt prüft darüber, dass die
-Domain wirklich zu diesem Anschluss gehört.
+```
+sudo mkdir -p --mode=0755 /usr/share/keyrings
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg \
+  | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared bookworm main' \
+  | sudo tee /etc/apt/sources.list.d/cloudflared.list
+sudo apt update && sudo apt install cloudflared
+```
+
+Im Dashboard unter **Zero Trust → Networks → Tunnels** einen Tunnel `nickberdi`
+anlegen, den angezeigten Installationsbefehl auf der Pi ausführen:
+
+```
+sudo cloudflared service install <TOKEN-AUS-DEM-DASHBOARD>
+sudo systemctl status cloudflared
+```
+
+Dann im Reiter **Public Hostname** zwei Einträge anlegen, beide auf Caddy:
+
+| Subdomain | Domain | Service |
+|---|---|---|
+| *(leer)* | nickberdi.ch | `HTTP` → `localhost:8080` |
+| `www` | nickberdi.ch | `HTTP` → `localhost:8080` |
+
+Cloudflare legt die DNS-Einträge selbst an (proxied `CNAME` auf
+`<tunnel-id>.cfargotunnel.com`). **Alte `A`-Einträge für `@` und `www`, die auf
+die Heim-IP zeigen, vorher löschen** — bleiben sie stehen, gibt es sporadische
+Ausfälle, die schwer zu finden sind. Portweiterleitung im Router und DDNS können
+jetzt weg.
 
 ```
 sudo apt install caddy
 sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
+sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
+curl -sI -H "Host: nickberdi.ch" http://127.0.0.1:8080/ | head -1   # 200
 ```
 
-Caddy holt das Zertifikat beim ersten Start selbst und erneuert es danach
-automatisch. Ab dann läuft das Anmeldeformular des Admin-Bereichs verschlüsselt —
-vorher geht das Passwort im Klartext durchs Netz.
+### 3a. Einstellungen in der Cloudflare-Oberfläche
 
-Im `Caddyfile` steht auskommentiert eine Variante, die `/admin.html` nur aus dem
-Heimnetz erreichbar macht. Empfehlenswert, sobald die Seite öffentlich ist.
+| Bereich | Einstellung | Wert |
+|---|---|---|
+| SSL/TLS | Encryption mode | Full (strict) |
+| SSL/TLS → Edge Certificates | Always Use HTTPS | An |
+| SSL/TLS → Edge Certificates | Minimum TLS Version | 1.2 |
+| Security | WAF Managed Ruleset | An |
+| Security | Rate-Limiting-Regel | `/api/login`, 5 pro Minute je IP |
+| Caching → Cache Rules | Pfad beginnt mit `/img/` | Edge TTL 1 Monat |
+| Caching → Cache Rules | `/admin.html`, `/data/content.js`, `/api/*` | Bypass cache |
+
+Die Bilder aus dem Edge-Cache auszuliefern nimmt der SD-Karte die Arbeit ab —
+genau dem Bauteil, das als erstes ausfällt.
+
+### 3b. Admin-Bereich absichern
+
+Unter **Zero Trust → Access → Applications** eine *Self-hosted* Anwendung für
+`nickberdi.ch/admin.html` und `nickberdi.ch/api` anlegen, Policy *Allow* mit den
+eigenen Mailadressen und Einmal-PIN. Die Anmeldung von `server.js` bleibt als
+zweite Hürde dahinter bestehen.
+
+Sitzungsdauer auf 24 Stunden setzen: läuft die Access-Sitzung mitten im
+Bearbeiten ab, bekommt `js/admin.js` beim Speichern die Anmeldeseite von
+Cloudflare statt JSON zurück und meldet einen unverständlichen Fehler.
+
+### 3c. Nutzung auswerten
+
+Zwei verschiedene Dinge, beide kostenlos:
+
+- **Analytics & Logs → Traffic** ist automatisch da, sobald der Verkehr über
+  Cloudflare läuft: Anfragen, Datenmenge, Cache-Quote, Statuscodes, Länder,
+  abgewehrte Angriffe. Zählt auch Suchmaschinen und Bots.
+- **Analytics & Logs → Web Analytics** ist die Besucherzahl, die man einem
+  Partner zeigt: Seitenaufrufe, Besuche, meistbesuchte Seiten, Verweise, Geräte.
+  Bei **Add a site** die Domain aus der Liste wählen — weil die Zone proxied
+  ist, spielt Cloudflare das Zählpixel selbst ein, es ist nichts am Code zu
+  ändern. Ohne Cookies und ohne Fingerprinting, ein Cookie-Banner braucht es
+  darum nicht; im Impressum erwähnen sollte man es trotzdem.
+
+Die Aufbewahrungsdauer im kostenlosen Tarif ist begrenzt — für einen
+Saisonrückblick die Monatszahlen unterwegs exportieren.
+
+Zum Schluss unter **Notifications** eine Meldung für **Tunnel Health** auf die
+eigene Mailadresse legen. Ohne offene Ports von aussen ist das der einzige Weg
+zu erfahren, dass die Pi steht.
 
 ### 4. Sicherungen
 
@@ -193,12 +259,12 @@ nicht Postgres.
 ## Offene Punkte
 
 - Noch ohne Ziel (`href="#"`): Impressum, „Unterlagen (PDF)“, „Medienpaket (ZIP)“.
-- Das Kontaktformular hat kein `action` — es braucht noch einen Empfänger/Endpoint.
 - Kennzahlen (Renntage, Instagram, Reichweite) und die Leiste „Nächster Start“ stehen
   bewusst auf `—`, bis die Zahlen feststehen. Beides ist im Admin-Bereich änderbar.
 - Resultate und Journal sind leer, weil noch keine Saison gefahren ist. Sobald der erste
   Eintrag erfasst ist, erscheinen Tabelle bzw. Beitragsliste automatisch.
 - Die Fahrzeug-Grafik auf `sponsorflaechen.html` ist eine Schemazeichnung (SVG), kein Foto.
   Flächen auf „vergeben“ zu setzen färbt sie in der Grafik grau.
-- Für den Betrieb unter einer Domain braucht es DDNS, siehe oben — sonst ist die
-  Seite nach dem nächsten IP-Wechsel des Providers nicht mehr erreichbar.
+- Das Kontaktformular auf `kontakt.html` ist noch gar kein Formular: kein `<form>`,
+  keine `name`-Attribute, und der Absende-Knopf ist ein `<a href="#">`. Eingaben
+  gehen dort verloren, statt irgendwo anzukommen.

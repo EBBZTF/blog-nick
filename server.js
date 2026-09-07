@@ -90,6 +90,20 @@ function noteFailure(ip) {
   if (!a || Date.now() - a.first > 15 * 60 * 1000) attempts.set(ip, { n: 1, first: Date.now() });
   else a.n += 1;
 }
+/* Hinter Caddy und dem Cloudflare Tunnel ist die Gegenstelle immer 127.0.0.1 —
+   ohne diesen Umweg zaehlten alle Besucher als eine einzige Adresse, und acht
+   Fehlversuche von irgendwem sperrten den Admin fuer alle.
+   CF-Connecting-IP setzt Cloudflare selbst und laesst sich vom Besucher nicht
+   faelschen; X-Forwarded-For ist der Rueckfall fuer den Betrieb ohne Cloudflare.
+   Beides ist nur vertrauenswuerdig, weil dieser Server ausschliesslich auf
+   127.0.0.1 lauscht und damit nur der eigene Reverse Proxy ihn erreicht. */
+function clientIp(req) {
+  const cf = req.headers["cf-connecting-ip"];
+  if (cf) return String(cf).trim();
+  const xff = req.headers["x-forwarded-for"];
+  if (xff) return String(xff).split(",")[0].trim();
+  return req.socket.remoteAddress || "?";
+}
 
 /* ------------------------------ Hilfsmittel ----------------------------- */
 const TYPES = {
@@ -152,14 +166,31 @@ function saveContent(obj) {
 }
 
 /* ------------------------------ Statische Dateien ----------------------- */
-const BLOCKED = new Set(["/data/admin-users.json", "/server.js"]);
+/* Nicht ausliefern: Zugangsdaten, Sicherungen, der Server selbst und die
+   Betriebsvorlagen. Aus data/ ist einzig content.js oeffentlich — als Liste
+   des Erlaubten formuliert, damit eine spaeter dazugelegte Datei nicht aus
+   Versehen im Netz steht. */
+function isBlocked(urlPath) {
+  if (urlPath === "/server.js" || urlPath.startsWith("/deploy/")) return true;
+  if (urlPath.startsWith("/data/") && urlPath !== "/data/content.js") return true;
+  return path.basename(urlPath).startsWith(".");
+}
 function serveStatic(req, res) {
-  let urlPath = decodeURIComponent((req.url.split("?")[0]) || "/");
+  let urlPath;
+  /* Ein kaputtes Prozentzeichen (/%zz) wirft hier — unbehandelt beendet das
+     den ganzen Prozess, eine einzige Anfrage legte die Seite lahm. */
+  try { urlPath = decodeURIComponent((req.url.split("?")[0]) || "/"); }
+  catch { res.writeHead(400); res.end("Bad request"); return; }
+
+  /* Zuerst normalisieren, dann sperren. Andersherum laeuft ein Pfad wie
+     /data/../data/admin-users.json an der Sperre vorbei, weil sie das rohe
+     ".." noch sieht und path.join es erst danach aufloest. */
+  urlPath = path.posix.normalize(urlPath);
+  if (!urlPath.startsWith("/")) { res.writeHead(403); res.end("Forbidden"); return; }
   if (urlPath.endsWith("/")) urlPath += "index.html";
-  if (BLOCKED.has(urlPath) || urlPath.includes("/backups/") || path.basename(urlPath).startsWith(".")) {
-    res.writeHead(404); res.end("Not found"); return;
-  }
-  const file = path.join(ROOT, path.normalize(urlPath));
+  if (isBlocked(urlPath)) { res.writeHead(404); res.end("Not found"); return; }
+
+  const file = path.join(ROOT, urlPath);
   if (!file.startsWith(ROOT + path.sep)) { res.writeHead(403); res.end("Forbidden"); return; }
 
   fs.stat(file, (err, st) => {
@@ -183,7 +214,7 @@ const server = http.createServer(async (req, res) => {
 
   if (!url.startsWith("/api/")) return serveStatic(req, res);
 
-  const ip = req.socket.remoteAddress || "?";
+  const ip = clientIp(req);
   const sess = sessionOf(req);
 
   try {

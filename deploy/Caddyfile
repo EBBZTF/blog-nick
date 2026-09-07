@@ -1,21 +1,45 @@
-# Caddy als Reverse Proxy vor dem Node-Server.
-# Holt und erneuert das Let's-Encrypt-Zertifikat selbstständig.
+# Caddy hinter einem Cloudflare Tunnel.
 #
-#   sudo apt install caddy
+# TLS macht Cloudflare am Edge, das Zertifikat ist damit nicht mehr unsere
+# Sache. Caddy lauscht nur noch auf 127.0.0.1:8080 und ist ausschliesslich
+# ueber den Tunnel erreichbar — von aussen fuehrt kein Weg direkt hierher.
+#
 #   sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
+#   sudo caddy validate --config /etc/caddy/Caddyfile
 #   sudo systemctl reload caddy
 #
-# Voraussetzungen:
-#   - Port 80 UND 443 im Router auf die Pi weiterleiten
-#     (80 wird für die Zertifikatsprüfung gebraucht, nicht nur 443)
-#   - nickberdi.ch zeigt auf die öffentliche IP des Anschlusses (siehe DDNS im README)
+# Voraussetzung: cloudflared laeuft und reicht nickberdi.ch und
+# www.nickberdi.ch an http://localhost:8080 weiter (siehe README).
+# Portweiterleitung im Router und DDNS werden dafuer nicht mehr gebraucht.
 
-nickberdi.ch, www.nickberdi.ch {
+{
+	# Kein automatisches HTTPS: Caddy soll gar nicht erst versuchen, sich ein
+	# Let's-Encrypt-Zertifikat zu holen — die Pruefung ueber Port 80 wuerde
+	# ohnehin bei Cloudflare landen und nie hier ankommen.
+	auto_https off
+
+	servers {
+		# cloudflared laeuft auf demselben Rechner; nur ihm glauben wir die
+		# weitergereichte Client-Adresse. Ohne das saehe der Server jeden
+		# Besucher als 127.0.0.1.
+		trusted_proxies static 127.0.0.1/8 ::1
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+	}
+}
+
+http://nickberdi.ch:8080, http://www.nickberdi.ch:8080 {
+	# Nur auf der Loopback-Schnittstelle lauschen: im Heimnetz kommt niemand
+	# an Caddy vorbei am Tunnel vorbei.
+	bind 127.0.0.1
+
 	encode zstd gzip
 
-	# Caddy setzt X-Forwarded-Proto automatisch — davon hängt ab, dass das
-	# Sitzungs-Cookie des Admin-Bereichs das Secure-Flag bekommt.
-	reverse_proxy 127.0.0.1:4000
+	reverse_proxy 127.0.0.1:4000 {
+		# Der Besucher spricht HTTPS mit Cloudflare, auch wenn dieser letzte
+		# Meter auf dem Pi selbst unverschluesselt ist. Davon haengt ab, dass
+		# das Sitzungs-Cookie des Admin-Bereichs das Secure-Flag bekommt.
+		header_up X-Forwarded-Proto https
+	}
 
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
@@ -33,13 +57,8 @@ nickberdi.ch, www.nickberdi.ch {
 	}
 }
 
-# Optional, zusätzlicher Riegel: Admin-Bereich nur aus dem Heimnetz erreichbar.
-# Dann kann sich von aussen niemand am Anmeldeformular versuchen.
-# Zum Aktivieren die folgenden Zeilen in den Block oben verschieben:
-#
-#	@admin path /admin.html /api/*
-#	handle @admin {
-#		@fremd not client_ip 192.168.1.0/24
-#		respond @fremd 404
-#		reverse_proxy 127.0.0.1:4000
-#	}
+# Der Admin-Bereich wird nicht mehr hier abgeriegelt, sondern mit Cloudflare
+# Access vor /admin.html und /api (siehe README). Eine Regel auf die Client-IP
+# waere an dieser Stelle wirkungslos: hinter dem Tunnel sieht Caddy ohne die
+# trusted_proxies-Zeile oben nur 127.0.0.1, und das Heimnetz kommt hier
+# ohnehin nie als eigene Adresse an.
