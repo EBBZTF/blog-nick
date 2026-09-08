@@ -36,6 +36,10 @@
 .btn-o{border-color:#5A6266;color:var(--alpine)}
 .btn-d{background:var(--anthracite);color:var(--alpine)}
 .btn-l{border-color:var(--line);color:var(--graphite)}
+/* Der Absende-Knopf im Kontaktformular ist ein <button>, alle uebrigen .btn
+   sind Links. Ohne diese Zeile faellt er wegen der Browser-Vorgaben fuer
+   line-height und appearance flacher aus als die Knoepfe daneben. */
+button.btn{line-height:inherit;-webkit-appearance:none;appearance:none}
 
 /* headlight divider */
 .lamps{display:flex;justify-content:center;padding:22px 0 4px;color:var(--line)}

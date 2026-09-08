@@ -8,7 +8,7 @@
 # Pfade und Benutzer unten anpassen, falls das Projekt woanders liegt.
 
 [Unit]
-Description=nickberdi.ch — Website und Admin-Bereich
+Description=berdi-racing.com — Website und Admin-Bereich
 Documentation=file:///home/pi/nickberdi/README.md
 After=network-online.target
 Wants=network-online.target

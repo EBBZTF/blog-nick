@@ -77,7 +77,7 @@ window.SITE_CONTENT = {
   "kontakt": {
     "lede": "Formular ausfüllen, und die vollständigen Unterlagen kommen per Mail — mit Antwort innert zwei Tagen.",
     "asideText": "Ansprechperson für Partneranfragen, Verträge und Termine ist Karin Berdi.",
-    "mail": "karin@nickberdi.ch",
+    "mail": "nick@berdi-racing.com",
     "tel": "+41 00 000 00 00",
     "ort": "Thurgau, Schweiz",
     "pdfText": "Die Unterlagen enthalten den Kalender beider Disziplinen, das Budget, Lackierungsentwürfe und eine Übersicht der freien Flächen am Auto."

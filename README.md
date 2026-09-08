@@ -1,4 +1,4 @@
-# nickberdi.ch — Website
+# berdi-racing.com — Website
 
 Statische Website ohne Build-Schritt. `index.html` im Browser öffnen — oder den ganzen
 Ordner auf einen Webspace laden. Für den Admin-Bereich gibt es zusätzlich einen kleinen
@@ -49,6 +49,7 @@ Schutz gegen Verklicken, keine echte Zugangssperre.
 | `sponsorflaechen.html` | Das Auto ohne Beschriftung, freie Werbeflächen markiert |
 | `journal.html` | Journal — Einträge aus dem Admin-Bereich |
 | `kontakt.html` | Kontakt — Anfrageformular |
+| `impressum.html` | Impressum und Datenschutzerklärung (aus dem Footer verlinkt) |
 | `admin.html` | Admin-Bereich (nicht in der Navigation, `noindex`) |
 
 ## Gemeinsame Dateien
@@ -60,6 +61,7 @@ Schutz gegen Verklicken, keine echte Zugangssperre.
 | `css/components.css` | Disziplin-Badges, Setup-Karten, Leer-Hinweise, Fahrzeug-Grafik |
 | `css/admin.css` | nur für `admin.html` |
 | `data/content.js` | **der gesamte Inhalt der Website** |
+| `data/anfragen.json` | eingegangene Kontaktanfragen, wird vom Server angelegt |
 | `js/content.js` | schreibt den Inhalt in die Seiten |
 | `js/site.js` | Filter-Chips auf Saison und Galerie |
 | `js/admin.js` | Formular und Speicherlogik des Admin-Bereichs |
@@ -87,6 +89,27 @@ Galerie, Resultate, Journal, Werdegang) werden über Container gefüllt:
 Ein neues Feld anlegen: `data-cms="…"` ins HTML setzen, den Schlüssel in `data/content.js`
 ergänzen und ihn im Katalog `SCHEMA` oben in `js/admin.js` eintragen — das Formular baut
 sich daraus selbst.
+
+## Kontaktformular
+
+`kontakt.html` schickt das Formular per `fetch()` an `POST /api/kontakt`. Der
+Server prüft die Adresse, verwirft alles außer den erlaubten Feldern und hängt
+den Eintrag an `data/anfragen.json` an — atomar über eine `.tmp`-Datei, wie bei
+`content.js`. Ein unsichtbares Feld (`website`) fängt Bots ab: ist es gefüllt,
+antwortet der Server `ok`, speichert aber nichts. Pro Adresse sind fünf
+Anfragen je Stunde möglich, gezählt getrennt von den Login-Fehlversuchen.
+
+Gelesen wird die Datei über `GET /api/anfragen` (nur angemeldet, neueste
+zuerst). Ausgeliefert wird sie nie: `isBlocked()` in `server.js` lässt aus
+`data/` einzig `content.js` durch. Da sie in `data/` liegt, ist sie von der
+täglichen Sicherung mit abgedeckt.
+
+Ohne laufenden Server gibt es keinen Empfänger — auf einem reinen Webspace
+bleibt das Formular ohne Funktion.
+
+Noch offen: es geht **keine Benachrichtigung** raus, jemand muss die Anfragen
+im Admin-Bereich abholen. Und `admin.html` zeigt sie noch nicht an, obwohl
+`/api/anfragen` die Daten schon liefert.
 
 ## Neue Seite
 
@@ -155,8 +178,8 @@ Dann im Reiter **Public Hostname** zwei Einträge anlegen, beide auf Caddy:
 
 | Subdomain | Domain | Service |
 |---|---|---|
-| *(leer)* | nickberdi.ch | `HTTP` → `localhost:8080` |
-| `www` | nickberdi.ch | `HTTP` → `localhost:8080` |
+| *(leer)* | berdi-racing.com | `HTTP` → `localhost:8080` |
+| `www` | berdi-racing.com | `HTTP` → `localhost:8080` |
 
 Cloudflare legt die DNS-Einträge selbst an (proxied `CNAME` auf
 `<tunnel-id>.cfargotunnel.com`). **Alte `A`-Einträge für `@` und `www`, die auf
@@ -169,7 +192,7 @@ sudo apt install caddy
 sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
-curl -sI -H "Host: nickberdi.ch" http://127.0.0.1:8080/ | head -1   # 200
+curl -sI -H "Host: berdi-racing.com" http://127.0.0.1:8080/ | head -1   # 200
 ```
 
 ### 3a. Einstellungen in der Cloudflare-Oberfläche
@@ -189,10 +212,22 @@ genau dem Bauteil, das als erstes ausfällt.
 
 ### 3b. Admin-Bereich absichern
 
-Unter **Zero Trust → Access → Applications** eine *Self-hosted* Anwendung für
-`nickberdi.ch/admin.html` und `nickberdi.ch/api` anlegen, Policy *Allow* mit den
-eigenen Mailadressen und Einmal-PIN. Die Anmeldung von `server.js` bleibt als
-zweite Hürde dahinter bestehen.
+Unter **Zero Trust → Access → Applications** eine *Self-hosted* Anwendung
+anlegen, Policy *Allow* mit den eigenen Mailadressen und Einmal-PIN. Die
+Anmeldung von `server.js` bleibt als zweite Hürde dahinter bestehen.
+
+Als Pfade **einzeln** eintragen — nicht `/api` pauschal:
+
+```
+berdi-racing.com/admin.html
+berdi-racing.com/api/content
+berdi-racing.com/api/anfragen
+```
+
+`/api/kontakt` muss öffentlich bleiben, sonst landet das Kontaktformular für
+jeden Besucher auf der Access-Anmeldung statt beim Empfänger. `/api/login`,
+`/api/session` und `/api/logout` bleiben ebenfalls offen; sie sind durch das
+Passwort geschützt und durch die Rate-Limiting-Regel aus 3a gebremst.
 
 Sitzungsdauer auf 24 Stunden setzen: läuft die Access-Sitzung mitten im
 Bearbeiten ab, bekommt `js/admin.js` beim Speichern die Anmeldeseite von
@@ -265,6 +300,5 @@ nicht Postgres.
   Eintrag erfasst ist, erscheinen Tabelle bzw. Beitragsliste automatisch.
 - Die Fahrzeug-Grafik auf `sponsorflaechen.html` ist eine Schemazeichnung (SVG), kein Foto.
   Flächen auf „vergeben“ zu setzen färbt sie in der Grafik grau.
-- Das Kontaktformular auf `kontakt.html` ist noch gar kein Formular: kein `<form>`,
-  keine `name`-Attribute, und der Absende-Knopf ist ein `<a href="#">`. Eingaben
-  gehen dort verloren, statt irgendwo anzukommen.
+- Eingegangene Anfragen lösen keine Mail aus — sie müssen im Admin-Bereich
+  abgeholt werden, und `admin.html` zeigt sie noch nicht an.

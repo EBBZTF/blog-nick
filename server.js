@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* nickberdi.ch — kleiner Server fuer den Admin-Bereich.
+/* berdi-racing.com — kleiner Server fuer den Admin-Bereich.
    Ohne Abhaengigkeiten, nur Node-Bordmittel.
 
    Starten:          node server.js
@@ -21,6 +21,7 @@ const ROOT = __dirname;
 const USERS_FILE = path.join(ROOT, "data", "admin-users.json");
 const CONTENT_FILE = path.join(ROOT, "data", "content.js");
 const BACKUP_DIR = path.join(ROOT, "data", "backups");
+const ANFRAGEN_FILE = path.join(ROOT, "data", "anfragen.json");
 const PORT = Number(process.env.PORT) || 4000;
 const HOST = process.env.HOST || "127.0.0.1";
 const SESSION_MS = 8 * 60 * 60 * 1000;
@@ -103,6 +104,40 @@ function clientIp(req) {
   const xff = req.headers["x-forwarded-for"];
   if (xff) return String(xff).split(",")[0].trim();
   return req.socket.remoteAddress || "?";
+}
+
+/* --------------------------- Anfragen entgegennehmen -------------------- */
+/* Getrennt vom Login-Zähler: ein Formular-Spammer soll den Admin nicht
+   aussperren, und ein Passwort-Rater nicht das Formular blockieren. */
+const kontaktRate = new Map();
+function kontaktZuOft(ip) {
+  const a = kontaktRate.get(ip);
+  if (!a) return false;
+  if (Date.now() - a.first > 60 * 60 * 1000) { kontaktRate.delete(ip); return false; }
+  return a.n >= 5;
+}
+function notiereKontakt(ip) {
+  const a = kontaktRate.get(ip);
+  if (!a || Date.now() - a.first > 60 * 60 * 1000) kontaktRate.set(ip, { n: 1, first: Date.now() });
+  else a.n += 1;
+}
+
+/* Nur diese Felder werden übernommen. Als Liste des Erlaubten formuliert,
+   damit ein Bot nicht beliebige Schlüssel in die Datei schreiben kann. */
+const KONTAKT_FELDER = ["name", "firma", "email", "telefon", "nachricht", "betreff"];
+const KONTAKT_MAX = 2000;
+
+function anfragenLesen() {
+  try { return JSON.parse(fs.readFileSync(ANFRAGEN_FILE, "utf8")); }
+  catch { return []; }
+}
+function anfrageSpeichern(eintrag) {
+  fs.mkdirSync(path.dirname(ANFRAGEN_FILE), { recursive: true });
+  const alle = anfragenLesen();
+  alle.push(eintrag);
+  const tmp = ANFRAGEN_FILE + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(alle, null, 2) + "\n", { mode: 0o600 });
+  fs.renameSync(tmp, ANFRAGEN_FILE);   /* atomar, wie bei content.js */
 }
 
 /* ------------------------------ Hilfsmittel ----------------------------- */
@@ -240,6 +275,50 @@ const server = http.createServer(async (req, res) => {
     if (url === "/api/logout" && req.method === "POST") {
       if (sess) sessions.delete(sess.token);
       return json(res, 200, { ok: true }, { "Set-Cookie": "nb_sess=; HttpOnly; Path=/; Max-Age=0" });
+    }
+
+    if (url === "/api/kontakt" && req.method === "POST") {
+      if (kontaktZuOft(ip)) {
+        return json(res, 429, { error: "Zu viele Anfragen. Bitte später erneut." });
+      }
+
+      let data;
+      try { data = JSON.parse(await readBody(req, 32768) || "{}"); }
+      catch { return json(res, 400, { error: "Anfrage konnte nicht gelesen werden." }); }
+
+      /* Honigtopf: ein für Menschen unsichtbares Feld. Bots füllen alles aus.
+         Wir antworten mit ok, damit der Bot es nicht erneut versucht. */
+      if (typeof data.website === "string" && data.website.trim()) {
+        return json(res, 200, { ok: true });
+      }
+
+      const sauber = {};
+      for (const feld of KONTAKT_FELDER) {
+        const v = data[feld];
+        if (typeof v === "string" && v.trim()) sauber[feld] = v.trim().slice(0, KONTAKT_MAX);
+      }
+
+      if (!sauber.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(sauber.email)) {
+        return json(res, 400, { error: "Bitte eine gültige E-Mail-Adresse angeben." });
+      }
+      if (!sauber.nachricht && !sauber.name) {
+        return json(res, 400, { error: "Bitte Name oder Nachricht ausfüllen." });
+      }
+
+      anfrageSpeichern({
+        id: crypto.randomBytes(8).toString("hex"),
+        eingang: new Date().toISOString(),
+        ip,
+        ...sauber
+      });
+      notiereKontakt(ip);
+      console.log(`[${new Date().toISOString()}] Neue Anfrage von ${sauber.email}`);
+      return json(res, 200, { ok: true });
+    }
+
+    if (url === "/api/anfragen" && req.method === "GET") {
+      if (!sess) return json(res, 401, { error: "Nicht angemeldet." });
+      return json(res, 200, anfragenLesen().slice().reverse());
     }
 
     if (url === "/api/content" && req.method === "GET") {

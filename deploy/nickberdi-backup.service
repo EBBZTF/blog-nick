@@ -1,6 +1,6 @@
 # Einmaliger Sicherungslauf, wird vom Timer daneben ausgelöst.
 [Unit]
-Description=Inhalt von nickberdi.ch sichern
+Description=Inhalt von berdi-racing.com sichern
 
 [Service]
 Type=oneshot

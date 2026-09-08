@@ -8,8 +8,8 @@
 #   sudo caddy validate --config /etc/caddy/Caddyfile
 #   sudo systemctl reload caddy
 #
-# Voraussetzung: cloudflared laeuft und reicht nickberdi.ch und
-# www.nickberdi.ch an http://localhost:8080 weiter (siehe README).
+# Voraussetzung: cloudflared laeuft und reicht berdi-racing.com und
+# www.berdi-racing.com an http://localhost:8080 weiter (siehe README).
 # Portweiterleitung im Router und DDNS werden dafuer nicht mehr gebraucht.
 
 {
@@ -27,7 +27,7 @@
 	}
 }
 
-http://nickberdi.ch:8080, http://www.nickberdi.ch:8080 {
+http://berdi-racing.com:8080, http://www.berdi-racing.com:8080 {
 	# Nur auf der Loopback-Schnittstelle lauschen: im Heimnetz kommt niemand
 	# an Caddy vorbei am Tunnel vorbei.
 	bind 127.0.0.1

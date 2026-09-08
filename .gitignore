@@ -1,5 +1,6 @@
 # Zugangsdaten und Sicherungen bleiben auf der Pi, nie im Repository.
 data/admin-users.json
+data/anfragen.json
 data/backups/
 data/*.tmp
 

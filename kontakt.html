@@ -2,7 +2,7 @@
 <html lang="de-CH">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kontakt — nickberdi.ch</title>
+<title>Kontakt — berdi-racing.com</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -25,23 +25,59 @@
     <div>
       <h2 style="font-size:31px">Reden wir</h2>
       <p class="lede" data-cms="kontakt.lede">Formular ausfüllen, und die vollständigen Unterlagen kommen per Mail — mit Antwort innert zwei Tagen.</p>
-      <div class="form">
+      <form class="form" id="kontaktForm" novalidate>
         <div class="two">
-          <div class="field"><label>Ihr Name</label><input placeholder="Anna Meier"></div>
-          <div class="field"><label>Firma</label><input placeholder="Meier Bau AG"></div>
+          <div class="field">
+            <label for="kf-name">Ihr Name</label>
+            <input id="kf-name" name="name" autocomplete="name" placeholder="Anna Meier" required>
+          </div>
+          <div class="field">
+            <label for="kf-firma">Firma</label>
+            <input id="kf-firma" name="firma" autocomplete="organization" placeholder="Meier Bau AG">
+          </div>
         </div>
-        <div class="field"><label>E-Mail</label><input placeholder="anna@meierbau.ch"></div>
-        <div class="field"><label>Woran sind Sie interessiert?</label>
-          <select><option>Schicken Sie mir die Unterlagen</option><option>Klebefläche am Auto</option><option>Material oder Leistung statt Geld</option><option>Hauptpartner</option><option>Nur eine Disziplin (Rallye oder Bergrennen)</option><option>Etwas anderes</option></select></div>
-        <div class="field"><label>Sonst noch etwas, das wir wissen sollten?</label><textarea rows="3" placeholder="Wir unterstützen ein lokales Team pro Jahr und entscheiden jeweils im November."></textarea></div>
-        <a href="#" class="btn btn-g">Absenden und Unterlagen erhalten</a>
-      </div>
+
+        <div class="field">
+          <label for="kf-email">E-Mail</label>
+          <input id="kf-email" name="email" type="email" autocomplete="email"
+                 placeholder="anna@meierbau.ch" required>
+        </div>
+
+        <div class="field">
+          <label for="kf-betreff">Woran sind Sie interessiert?</label>
+          <select id="kf-betreff" name="betreff">
+            <option value="Unterlagen">Schicken Sie mir die Unterlagen</option>
+            <option value="Klebeflaeche">Klebefläche am Auto</option>
+            <option value="Naturalleistung">Material oder Leistung statt Geld</option>
+            <option value="Hauptpartner">Hauptpartner</option>
+            <option value="Eine Disziplin">Nur eine Disziplin (Rallye oder Bergrennen)</option>
+            <option value="Anderes">Etwas anderes</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="kf-nachricht">Sonst noch etwas, das wir wissen sollten?</label>
+          <textarea id="kf-nachricht" name="nachricht" rows="3"
+                    placeholder="Wir unterstützen ein lokales Team pro Jahr und entscheiden jeweils im November."></textarea>
+        </div>
+
+        <!-- Honigtopf. Für Menschen unsichtbar, Bots füllen ihn aus.
+             Nicht display:none — das erkennen manche Bots. -->
+        <div aria-hidden="true"
+             style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden">
+          <label for="kf-website">Website</label>
+          <input id="kf-website" name="website" tabindex="-1" autocomplete="off">
+        </div>
+
+        <button type="submit" class="btn btn-g">Absenden und Unterlagen erhalten</button>
+        <p id="kf-status" class="mono" style="font-size:13px;margin:10px 0 0" role="status"></p>
+      </form>
     </div>
     <aside>
       <div style="background:var(--anthracite);color:var(--alpine);padding:18px;border-top:3px solid var(--bbs)">
         <h3 style="font-size:19px;margin:0 0 8px">Mit wem Sie sprechen</h3>
         <p style="color:#B4BABD;font-size:14px;margin:0 0 12px" data-cms="kontakt.asideText">Ansprechperson für Partneranfragen, Verträge und Termine ist Karin Berdi.</p>
-        <div class="mono" style="font-size:13px;color:#E4E8EA;line-height:1.9"><span data-cms="kontakt.mail">karin@nickberdi.ch</span><br><span data-cms="kontakt.tel">+41 00 000 00 00</span><br><span data-cms="kontakt.ort">Thurgau, Schweiz</span></div>
+        <div class="mono" style="font-size:13px;color:#E4E8EA;line-height:1.9"><span data-cms="kontakt.mail">nick@berdi-racing.com</span><br><span data-cms="kontakt.tel">+41 00 000 00 00</span><br><span data-cms="kontakt.ort">Thurgau, Schweiz</span></div>
       </div>
       <div style="border:1px solid var(--line);background:var(--chalk);padding:16px;margin-top:14px">
         <b style="font-family:Archivo,sans-serif;font-size:17px">Lieber nur lesen?</b>
@@ -54,7 +90,7 @@
     <div><b style="font-family:Archivo,sans-serif;font-size:15px;color:#E4E8EA" data-cms="site.footerBrand">NICK BERDI · E30</b>
       <p style="margin:6px 0 0;max-width:34ch" data-cms="site.footerText">Junioren-Motorsport, Thurgau. Bergrennen und Rallye mit einem BMW E30 von 1990.</p></div>
     <div><a href="das-auto.html">Das Auto</a><br><a href="saison.html">Saison</a><br><a href="galerie.html">Galerie</a><br><a href="journal.html">Journal</a><br><a href="kontakt.html">Kontakt</a></div>
-    <div>Instagram<br>YouTube<br><a href="#">Unterlagen (PDF)</a><br><a href="#">Impressum</a></div>
+    <div>Instagram<br>YouTube<br><a href="#">Unterlagen (PDF)</a><br><a href="impressum.html">Impressum</a></div>
   </div></footer>
   <div class="tri"><i></i><i></i><i></i></div>
 </div>
@@ -62,5 +98,63 @@
 <script src="data/content.js"></script>
 <script src="js/content.js"></script>
 <script src="js/site.js"></script>
+
+<script>
+(function () {
+  var form = document.getElementById("kontaktForm");
+  if (!form) return;
+  var status = document.getElementById("kf-status");
+  var knopf = form.querySelector("button[type=submit]");
+
+  function melde(text, ok) {
+    status.textContent = text;
+    status.style.color = ok ? "#2E7D32" : "#B3261E";
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    var daten = {};
+    new FormData(form).forEach(function (wert, schluessel) {
+      daten[schluessel] = wert;
+    });
+
+    if (!daten.email || daten.email.indexOf("@") < 1) {
+      melde("Bitte eine gültige E-Mail-Adresse angeben.", false);
+      return;
+    }
+
+    knopf.disabled = true;
+    var urspruenglich = knopf.textContent;
+    knopf.textContent = "Wird gesendet …";
+    melde("", true);
+
+    fetch("/api/kontakt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(daten)
+    })
+      .then(function (r) {
+        return r.json().then(function (j) { return { ok: r.ok, body: j }; });
+      })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.body.error || "Fehler");
+        form.reset();
+        melde("Danke — die Anfrage ist angekommen. Antwort folgt innert zwei Tagen.", true);
+      })
+      .catch(function (err) {
+        melde(
+          (err.message || "Senden fehlgeschlagen.") +
+          " Bitte direkt per Mail an nick@berdi-racing.com.",
+          false
+        );
+      })
+      .then(function () {
+        knopf.disabled = false;
+        knopf.textContent = urspruenglich;
+      });
+  });
+})();
+</script>
 
 </html>
