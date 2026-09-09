@@ -6,5 +6,5 @@ Description=Inhalt von berdi-racing.com sichern
 Type=oneshot
 User=pi
 # Zweites Argument ergänzen, um zusätzlich auf ein NAS zu kopieren:
-#   ExecStart=/home/pi/nickberdi/deploy/backup-content.sh pi@nas:/backups/website
-ExecStart=/home/pi/nickberdi/deploy/backup-content.sh
+#   ExecStart=/home/pi/nick-blog/deploy/backup-content.sh pi@nas:/backups/website
+ExecStart=/home/pi/nick-blog/deploy/backup-content.sh

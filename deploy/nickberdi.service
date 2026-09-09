@@ -9,7 +9,7 @@
 
 [Unit]
 Description=berdi-racing.com — Website und Admin-Bereich
-Documentation=file:///home/pi/nickberdi/README.md
+Documentation=file:///home/pi/nick-blog/README.md
 After=network-online.target
 Wants=network-online.target
 
@@ -17,7 +17,7 @@ Wants=network-online.target
 Type=simple
 User=pi
 Group=pi
-WorkingDirectory=/home/pi/nickberdi
+WorkingDirectory=/home/pi/nick-blog
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=3
@@ -32,7 +32,7 @@ Environment=NODE_ENV=production
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ReadWritePaths=/home/pi/nickberdi/data
+ReadWritePaths=/home/pi/nick-blog/data
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true

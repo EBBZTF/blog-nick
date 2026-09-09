@@ -64,13 +64,20 @@ Schutz gegen Verklicken, keine echte Zugangssperre.
 | `data/anfragen.json` | eingegangene Kontaktanfragen, wird vom Server angelegt |
 | `js/content.js` | schreibt den Inhalt in die Seiten |
 | `js/site.js` | Filter-Chips auf Saison und Galerie |
+| `js/api.js` | alle `/api/*`-Aufrufe an einer Stelle (`window.API`) |
+| `js/kontakt.js` | Kontaktformular |
 | `js/admin.js` | Formular und Speicherlogik des Admin-Bereichs |
 | `server.js` | optionaler Server: Anmeldung + Speichern |
 | `deploy/*` | systemd-Unit, Caddyfile und Sicherungsskript für die Pi |
 | `img/*.jpg` | die Fotos (max. 1800 px) |
 
 Reihenfolge der Stylesheets ist die Kaskade — `base → site → components` beibehalten.
-Die Skripte müssen in dieser Reihenfolge stehen: `data/content.js` → `js/content.js` → `js/site.js`.
+Die Skripte müssen in dieser Reihenfolge stehen: `data/content.js` → `js/content.js` →
+`js/site.js`. Wo `js/api.js` gebraucht wird, steht es vor seinen Nutzern — auf
+`kontakt.html` vor `js/kontakt.js`, auf `admin.html` vor `js/admin.js`.
+
+Es steht kein JavaScript in den HTML-Dateien. Neues Verhalten kommt in eine Datei
+unter `js/`, nicht in ein `<script>` auf der Seite.
 
 ## Wie der Inhalt in die Seite kommt
 
@@ -92,7 +99,7 @@ sich daraus selbst.
 
 ## Kontaktformular
 
-`kontakt.html` schickt das Formular per `fetch()` an `POST /api/kontakt`. Der
+`js/kontakt.js` schickt das Formular über `API.post()` an `POST /api/kontakt`. Der
 Server prüft die Adresse, verwirft alles außer den erlaubten Feldern und hängt
 den Eintrag an `data/anfragen.json` an — atomar über eine `.tmp`-Datei, wie bei
 `content.js`. Ein unsichtbares Feld (`website`) fängt Bots ab: ist es gefüllt,
@@ -104,8 +111,13 @@ zuerst). Ausgeliefert wird sie nie: `isBlocked()` in `server.js` lässt aus
 `data/` einzig `content.js` durch. Da sie in `data/` liegt, ist sie von der
 täglichen Sicherung mit abgedeckt.
 
+Geprüft wird vor dem Absenden mit `form.checkValidity()`; die Regeln stehen als
+`required` und `type="email"` im HTML und nicht ein zweites Mal im Skript. Die
+Statuszeile färbt sich über die Klassen `.is-ok` und `.is-fehler`, deren Farben
+als Tokens `--ok` und `--fehler` in `css/base.css` liegen.
+
 Ohne laufenden Server gibt es keinen Empfänger — auf einem reinen Webspace
-bleibt das Formular ohne Funktion.
+bleibt das Formular ohne Funktion; die Statuszeile nennt dann die Mailadresse.
 
 Noch offen: es geht **keine Benachrichtigung** raus, jemand muss die Anfragen
 im Admin-Bereich abholen. Und `admin.html` zeigt sie noch nicht an, obwohl
@@ -140,7 +152,7 @@ sonst über NodeSource nachinstallieren.
 
 ### 2. Dienst einrichten
 
-Projekt nach `/home/pi/nickberdi` legen (andere Pfade in der Unit anpassen), dann:
+Projekt nach `/home/pi/nick-blog` legen (andere Pfade in der Unit anpassen), dann:
 
 ```
 node server.js --set-password nick "ein-langes-passwort"
@@ -270,13 +282,13 @@ behält die letzten 30. Um zusätzlich auf ein anderes Gerät zu kopieren, in
 `nickberdi-backup.service` ein Ziel ergänzen:
 
 ```
-ExecStart=/home/pi/nickberdi/deploy/backup-content.sh pi@nas:/backups/website
+ExecStart=/home/pi/nick-blog/deploy/backup-content.sh pi@nas:/backups/website
 ```
 
 Wiederherstellen ist ein Entpacken:
 
 ```
-tar -xzf ~/backups/nickberdi/data-2027-03-14_030000.tar.gz -C /home/pi/nickberdi
+tar -xzf ~/backups/nickberdi/data-2027-03-14_030000.tar.gz -C /home/pi/nick-blog
 sudo systemctl restart nickberdi
 ```
 

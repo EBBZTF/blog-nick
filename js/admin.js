@@ -398,24 +398,27 @@
   function save() {
     if (mode !== "server") { download(); return; }
     $("btnSave").disabled = true;
-    fetch("api/content", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "same-origin",
-      body: JSON.stringify(data)
-    }).then(function (r) {
-      if (r.status === 401) { location.reload(); return null; }
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    }).then(function (res) {
-      if (!res) return;
-      markClean();
-      toast("Gespeichert. Die Website zeigt die Änderungen sofort.");
-    }).catch(function () {
-      toast("Speichern fehlgeschlagen — bitte Datei herunterladen.", true);
-    }).then(function () {
-      $("btnSave").disabled = false;
-    });
+    API.post("api/content", data)
+      .then(function () {
+        markClean();
+        toast("Gespeichert. Die Website zeigt die Änderungen sofort.");
+      })
+      .catch(function (err) {
+        /* Sitzung abgelaufen — neu laden führt zurück aufs Anmeldeformular. */
+        if (err.status === 401) { location.reload(); return; }
+        toast(err.message + " Notfalls die Datei herunterladen.", true);
+      })
+      .then(function () { $("btnSave").disabled = false; });
+  }
+
+  /* Gespeicherten Stand holen und danach weitermachen. Scheitert das Laden,
+     bleibt der Stand aus data/content.js stehen — die Oberfläche soll auch
+     dann aufgehen. Wird von boot() und von der Anmeldung benutzt. */
+  function ladeInhaltDann(fertig) {
+    API.get("api/content")
+      .then(function (c) { if (c) data = c; })
+      .catch(function () {})
+      .then(fertig);
   }
 
   /* ============================ Anmeldung ================================ */
@@ -432,29 +435,26 @@
   }
 
   function boot() {
-    fetch("api/session", { credentials: "same-origin" })
-      .then(function (r) {
-        /* Ein statischer Webspace antwortet hier mit 404 — das ist kein Server-Betrieb. */
-        if (!r.ok) throw new Error("kein Server");
-        return r.json();
-      })
-      .then(function (s) {
-        mode = "server";
-        $("loginNote").textContent =
-          "Zugang bekommt man von Karin oder Emma. Nach dem Speichern ist die Änderung sofort online.";
-        if (s && s.user) {
-          // Serverseitig bereits angemeldet — direkt weiter, gespeicherten Stand laden.
-          fetch("api/content", { credentials: "same-origin" })
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (c) { if (c) data = c; showApp(s.user); });
-        }
-      })
-      .catch(function () {
-        mode = "offline";
-        $("loginNote").textContent =
-          "Kein Server erkannt. Die Anmeldung ist hier nur ein Schutz gegen Verklicken; " +
-          "gespeichert wird, indem die Datei heruntergeladen und als data/content.js hochgeladen wird.";
-      });
+    /* Zwei Rückrufe statt .catch(): so fängt der Offline-Zweig wirklich nur
+       die Session-Anfrage ab und nicht auch noch Fehler aus mitServer(). */
+    API.get("api/session").then(mitServer, ohneServer);
+
+    function mitServer(s) {
+      mode = "server";
+      $("loginNote").textContent =
+        "Zugang bekommt man von Karin oder Emma. Nach dem Speichern ist die Änderung sofort online.";
+      /* Serverseitig bereits angemeldet — direkt weiter. */
+      if (s && s.user) ladeInhaltDann(function () { showApp(s.user); });
+    }
+
+    function ohneServer() {
+      /* Ein statischer Webspace hat kein /api — kein Fehler, sondern der
+         Betrieb ohne Server. */
+      mode = "offline";
+      $("loginNote").textContent =
+        "Kein Server erkannt. Die Anmeldung ist hier nur ein Schutz gegen Verklicken; " +
+        "gespeichert wird, indem die Datei heruntergeladen und als data/content.js hochgeladen wird.";
+    }
   }
 
   $("loginForm").addEventListener("submit", function (e) {
@@ -467,29 +467,26 @@
       showApp(user || "offline");
       return;
     }
-    fetch("api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "same-origin",
-      body: JSON.stringify({ user: user, pass: pass })
-    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+    API.post("api/login", { user: user, pass: pass })
       .then(function (res) {
-        if (!res.ok) { $("loginErr").textContent = res.j.error || "Anmeldung fehlgeschlagen."; return; }
-        return fetch("api/content", { credentials: "same-origin" })
-          .then(function (r) { return r.ok ? r.json() : null; })
-          .then(function (c) { if (c) data = c; showApp(res.j.user); });
+        ladeInhaltDann(function () { showApp(res.user); });
       })
-      .catch(function () { $("loginErr").textContent = "Server nicht erreichbar."; });
+      .catch(function (err) {
+        /* Deckt beides ab: abgelehnte Anmeldung (Meldung kommt vom Server)
+           und gar keine Verbindung. */
+        $("loginErr").textContent = err.message;
+      });
   });
 
   $("btnSave").addEventListener("click", save);
   $("btnDownload").addEventListener("click", download);
   $("btnLogout").addEventListener("click", function () {
     if (dirty && !confirm("Es gibt ungespeicherte Änderungen. Trotzdem abmelden?")) return;
-    if (mode === "server") {
-      fetch("api/logout", { method: "POST", credentials: "same-origin" })
-        .then(function () { location.reload(); });
-    } else { location.reload(); }
+    if (mode !== "server") { location.reload(); return; }
+    /* Auch wenn das Abmelden scheitert, neu laden: die Sitzung im Browser
+       ist dann jedenfalls weg. */
+    API.post("api/logout").then(neuLaden, neuLaden);
+    function neuLaden() { location.reload(); }
   });
 
   window.addEventListener("beforeunload", function (e) {

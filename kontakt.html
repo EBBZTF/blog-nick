@@ -23,7 +23,7 @@
   </nav>
   <section class="sec"><div class="wrap contact-grid" style="display:grid;grid-template-columns:1.15fr .85fr;gap:30px">
     <div>
-      <h2 style="font-size:31px">Reden wir</h2>
+      <h2 style="font-size:31px">Lass uns in Kontakt treten</h2>
       <p class="lede" data-cms="kontakt.lede">Formular ausfüllen, und die vollständigen Unterlagen kommen per Mail — mit Antwort innert zwei Tagen.</p>
       <form class="form" id="kontaktForm" novalidate>
         <div class="two">
@@ -70,14 +70,14 @@
         </div>
 
         <button type="submit" class="btn btn-g">Absenden und Unterlagen erhalten</button>
-        <p id="kf-status" class="mono" style="font-size:13px;margin:10px 0 0" role="status"></p>
+        <p id="kf-status" class="mono formstatus" role="status" aria-live="polite"></p>
       </form>
     </div>
     <aside>
       <div style="background:var(--anthracite);color:var(--alpine);padding:18px;border-top:3px solid var(--bbs)">
         <h3 style="font-size:19px;margin:0 0 8px">Mit wem Sie sprechen</h3>
-        <p style="color:#B4BABD;font-size:14px;margin:0 0 12px" data-cms="kontakt.asideText">Ansprechperson für Partneranfragen, Verträge und Termine ist Karin Berdi.</p>
-        <div class="mono" style="font-size:13px;color:#E4E8EA;line-height:1.9"><span data-cms="kontakt.mail">nick@berdi-racing.com</span><br><span data-cms="kontakt.tel">+41 00 000 00 00</span><br><span data-cms="kontakt.ort">Thurgau, Schweiz</span></div>
+        <p style="color:#B4BABD;font-size:14px;margin:0 0 12px" data-cms="kontakt.asideText">Ansprechperson für Partneranfragen, Verträge und Termine ist Nick Berdi.</p>
+        <div class="mono" style="font-size:13px;color:#E4E8EA;line-height:1.9"><span data-cms="kontakt.mail">nick@berdi-racing.com</span><br><span data-cms="kontakt.tel">+41 78 696 50 98</span><br><span data-cms="kontakt.ort">Thurgau, Schweiz</span></div>
       </div>
       <div style="border:1px solid var(--line);background:var(--chalk);padding:16px;margin-top:14px">
         <b style="font-family:Archivo,sans-serif;font-size:17px">Lieber nur lesen?</b>
@@ -98,63 +98,7 @@
 <script src="data/content.js"></script>
 <script src="js/content.js"></script>
 <script src="js/site.js"></script>
-
-<script>
-(function () {
-  var form = document.getElementById("kontaktForm");
-  if (!form) return;
-  var status = document.getElementById("kf-status");
-  var knopf = form.querySelector("button[type=submit]");
-
-  function melde(text, ok) {
-    status.textContent = text;
-    status.style.color = ok ? "#2E7D32" : "#B3261E";
-  }
-
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    var daten = {};
-    new FormData(form).forEach(function (wert, schluessel) {
-      daten[schluessel] = wert;
-    });
-
-    if (!daten.email || daten.email.indexOf("@") < 1) {
-      melde("Bitte eine gültige E-Mail-Adresse angeben.", false);
-      return;
-    }
-
-    knopf.disabled = true;
-    var urspruenglich = knopf.textContent;
-    knopf.textContent = "Wird gesendet …";
-    melde("", true);
-
-    fetch("/api/kontakt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(daten)
-    })
-      .then(function (r) {
-        return r.json().then(function (j) { return { ok: r.ok, body: j }; });
-      })
-      .then(function (res) {
-        if (!res.ok) throw new Error(res.body.error || "Fehler");
-        form.reset();
-        melde("Danke — die Anfrage ist angekommen. Antwort folgt innert zwei Tagen.", true);
-      })
-      .catch(function (err) {
-        melde(
-          (err.message || "Senden fehlgeschlagen.") +
-          " Bitte direkt per Mail an nick@berdi-racing.com.",
-          false
-        );
-      })
-      .then(function () {
-        knopf.disabled = false;
-        knopf.textContent = urspruenglich;
-      });
-  });
-})();
-</script>
+<script src="js/api.js"></script>
+<script src="js/kontakt.js"></script>
 
 </html>
