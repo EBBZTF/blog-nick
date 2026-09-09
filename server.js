@@ -667,12 +667,26 @@ const server = http.createServer(async (req, res) => {
         return json(res, 415, { error: "WebP images only. The upload normally converts by itself." });
       }
 
-      fs.mkdirSync(UPLOAD_DIR, { recursive: true });
       const name = variant === "thumb" ? `${id}-480.webp` : `${id}.webp`;
       const dest = path.join(UPLOAD_DIR, name);
       const tmp = dest + ".tmp";
-      fs.writeFileSync(tmp, buf);
-      fs.renameSync(tmp, dest);      /* atomic, as everywhere else */
+      /* Writing is the one step that fails for reasons outside this process:
+         data/ not writable by the service user, or the card full. Caught here
+         so the answer names the cause — otherwise it fell through to the
+         generic catch at the bottom and reported an unrelated 400. */
+      try {
+        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+        fs.writeFileSync(tmp, buf);
+        fs.renameSync(tmp, dest);    /* atomic, as everywhere else */
+      } catch (err) {
+        console.error(`[upload] writing ${name} failed: ${err.code} ${err.message}`);
+        try { fs.unlinkSync(tmp); } catch { /* nothing left over */ }
+        const why = err.code === "EACCES" || err.code === "EPERM"
+          ? "the service may not write to data/ (ReadWritePaths in the systemd unit, and the owner of the directory)"
+          : err.code === "ENOSPC" ? "the disk is full"
+          : `error code ${err.code}`;
+        return json(res, 500, { error: `The image could not be stored: ${why}.` });
+      }
       noteUpload(sess.user);
 
       console.log(`[${new Date().toISOString()}] ${sess.user} uploaded ${name} (${buf.length} bytes)`);

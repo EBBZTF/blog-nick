@@ -344,12 +344,61 @@ curl -sI -H "Host: berdi-racing.com" http://127.0.0.1:8080/ | head -1   # 200
 | SSL/TLS → Edge Certificates | Minimum TLS Version | 1.2 |
 | Security | WAF Managed Ruleset | on |
 | Security | rate-limiting rule | `/api/login`, 5 per minute per IP |
+| Security → WAF | **one skip rule for the admin API** | see below — without it the admin area is answered with 403 |
 | Caching → Cache Rules | path starts with `/img/` | edge TTL 1 month |
 | Caching → Cache Rules | path starts with `/media/` | edge TTL 1 month |
 | Caching → Cache Rules | `/admin.html`, `/data/content.js`, `/api/*` | bypass cache |
 
 Serving the images from the edge cache takes the work off the SD card — exactly
 the part that fails first.
+
+**The WAF needs one exception for the admin area.** Requests from the admin
+area are answered with **403** before they ever reach the Pi: an upload is a
+`POST` with a binary body, and saving content is a `POST` whose text may contain
+quotes or angle brackets. The Managed Ruleset reads both as an attack. The admin
+area then reports “The server answered with error 403.”
+
+One rule covers all of it — not one rule per action. Under **Security → WAF →
+Custom rules → Create rule**, press *Edit expression* and paste:
+
+```
+(starts_with(http.request.uri.path, "/api/") and not http.request.uri.path eq "/api/contact")
+```
+
+| Form field | Value |
+|---|---|
+| Rule name | `Admin API — skip managed rules` |
+| Then take action | **Skip** |
+| Status | **Active** |
+
+After choosing **Skip** the form expands with checkboxes for what to skip. Tick
+**Managed rules** — that is the ruleset doing the blocking — and **All remaining
+custom rules**.
+
+**Do not tick “Rate limiting rules.”** That is what keeps the `/api/login` brake
+from the table above alive. If Skip offers no Managed-rules checkbox in this
+zone, use **Security → WAF → Managed rules → Cloudflare Managed Ruleset → Add
+exception** with the same expression instead.
+
+`/api/contact` is deliberately left out: it is the only endpoint a stranger can
+reach, so it keeps the full ruleset. Everything else under `/api/` is admin-only,
+and writing the rule by prefix means an endpoint added later is covered without
+touching Cloudflare again.
+
+Skipping the ruleset there is a deliberate decision, not a hole. Those endpoints
+already sit behind Cloudflare Access and the password login, every one of them
+requires a session, uploads are checked by magic bytes rather than the declared
+type, sizes are capped at 3 MB per image and 300 MB per directory, file names are
+generated on the server, and the accepted form fields are an allow-list. There is
+also nothing for SQL-injection or code-execution patterns to reach: no database,
+no SQL, no `eval`, no shell calls and no dependencies. On the public pages, where
+the ruleset actually earns its keep, it stays on.
+
+**Diagnosing a 403:** the upload endpoint itself can only answer 200, 400, 401,
+415, 429, 500 or 507, and the other admin endpoints never answer 403 at all — so
+a 403 always comes from in front of the server. **Security → Events** shows which
+rule fired and separates a WAF block (Managed rule, action Block) from an Access
+denial (add the paths from 3b).
 
 ### 3b. Securing the admin area
 
