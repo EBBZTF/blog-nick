@@ -1,11 +1,14 @@
-# Zugangsdaten und Sicherungen bleiben auf der Pi, nie im Repository.
+# Credentials, enquiries, uploads and backups stay on the Pi, never in the
+# repository. Uploaded images are content, not source — they are covered by the
+# daily backup instead (see deploy/backup-content.sh).
 data/admin-users.json
-data/anfragen.json
+data/inquiries.json
+data/uploads/
 data/backups/
 data/*.tmp
 
 # IDE
 .idea/
 
-# Betriebssystem
+# Operating system
 .DS_Store

@@ -1,173 +1,302 @@
-# berdi-racing.com — Website
+# berdi-racing.com — website
 
-Statische Website ohne Build-Schritt. `index.html` im Browser öffnen — oder den ganzen
-Ordner auf einen Webspace laden. Für den Admin-Bereich gibt es zusätzlich einen kleinen
-Server (`server.js`), der ebenfalls ohne Abhängigkeiten auskommt.
+Static website with no build step. Open `index.html` in a browser — or upload the
+whole folder to a web space. For the admin area there is additionally a small
+server (`server.js`), which likewise needs no dependencies.
 
-## Inhalt ändern, ohne Code anzufassen
+## Changing content without touching code
 
-Alle Texte, Zahlen, Partner, Pakete, Bilder und Resultate stehen in **einer** Datei:
-`data/content.js`. Bearbeitet wird sie über `admin.html` — nie von Hand.
+All texts, figures, partners, packages, images and results live in **one** file:
+`data/content.js`. It is edited through `admin.html` — never by hand.
 
-### Mit Server (empfohlen, Speichern direkt aus dem Browser)
+### With the server (recommended, saving straight from the browser)
 
 ```
-node server.js --set-password nick "ein-langes-passwort"   # einmalig
-node server.js                                             # startet auf Port 4000
+node server.js --set-password nick "a-long-password"   # once
+node server.js                                         # starts on port 4000
 ```
 
-Dann `http://127.0.0.1:4000/admin.html` öffnen, anmelden, ändern, **Speichern**.
-Der Server schreibt `data/content.js` und legt vorher eine Sicherung unter
-`data/backups/` ab (die letzten 30 bleiben erhalten).
+Then open `http://127.0.0.1:4000/admin.html`, sign in, make changes, **Save**.
+The server writes `data/content.js` and puts a backup under `data/backups/`
+first (the last 30 are kept).
 
-| Umgebungsvariable | Standard | Zweck |
+| Environment variable | Default | Purpose |
 |---|---|---|
-| `PORT` | `4000` | Port |
-| `HOST` | `127.0.0.1` | auf `0.0.0.0` setzen, um im Netz erreichbar zu sein |
+| `PORT` | `4000` | port |
+| `HOST` | `127.0.0.1` | set to `0.0.0.0` to be reachable on the network |
 
-Weitere Zugänge: `node server.js --set-password emma "…"`,
-entfernen mit `node server.js --remove-user emma`.
-Passwörter liegen als scrypt-Hash in `data/admin-users.json` — diese Datei wird vom
-Server nie ausgeliefert und gehört nicht in ein öffentliches Repository.
+Further accounts: `node server.js --set-password emma "…"`, remove with
+`node server.js --remove-user emma`. Passwords are stored as scrypt hashes in
+`data/admin-users.json` — that file is never delivered by the server and does
+not belong in a public repository.
 
-### Ohne Server (reiner Webspace)
+### Without the server (plain web space)
 
-`admin.html` funktioniert auch dort. Der Browser erkennt, dass kein Server antwortet;
-statt „Speichern“ steht dann **„Datei herunterladen“**. Die heruntergeladene `content.js`
-per FTP nach `data/content.js` laden — fertig. Die Anmeldung ist in diesem Fall nur ein
-Schutz gegen Verklicken, keine echte Zugangssperre.
+`admin.html` works there too. The browser notices that no server answers;
+instead of “Save” the button then reads **“Download file”**. Upload the
+downloaded `content.js` to `data/content.js` by FTP — done. In this case the
+sign-in is only a guard against a stray click, not a real access barrier.
 
-## Seiten
+## Pages
 
-| Datei | Seite |
+| File | Page |
 |---|---|
-| `index.html` | Start — Hero, Datenleiste, nächster Start, letzter Einsatz |
-| `das-auto.html` | Das Auto — Datenblatt, zwei Setups, Detailaufnahmen |
-| `saison.html` | Saison — Kennzahlen, Resultattabelle mit Filter, Werdegang |
-| `galerie.html` | Galerie — Filter nach Kategorie |
-| `partner.html` | Partner — Kennzahlen, Pakete, aktuelle Partner |
-| `sponsorflaechen.html` | Das Auto ohne Beschriftung, freie Werbeflächen markiert |
-| `journal.html` | Journal — Einträge aus dem Admin-Bereich |
-| `kontakt.html` | Kontakt — Anfrageformular |
-| `impressum.html` | Impressum und Datenschutzerklärung (aus dem Footer verlinkt) |
-| `admin.html` | Admin-Bereich (nicht in der Navigation, `noindex`) |
+| `index.html` | home — hero, spec bar, next start, last outing |
+| `ueber-mich.html` | about me — Nick's own text: motivation, how it started, goals |
+| `das-auto.html` | the car — spec sheet, two setups, detail shots |
+| `saison.html` | season — key figures, results table with filter, career |
+| `galerie.html` | gallery — filter by category |
+| `partner.html` | partner — key figures, packages, current partners |
+| `sponsorflaechen.html` | the car without livery, free advertising surfaces marked |
+| `journal.html` | journal — entries from the admin area |
+| `kontakt.html` | contact — enquiry form |
+| `impressum.html` | imprint and privacy policy (linked from the footer) |
+| `admin.html` | admin area (not in the navigation, `noindex`) |
 
-## Gemeinsame Dateien
+The page file names are German on purpose — see “Language in the code” below.
 
-| Datei | Inhalt |
+## Shared files
+
+| File | Content |
 |---|---|
-| `css/base.css` | Design-Tokens (`--alpine`, `--anthracite`, `--bbs` …), Reset |
-| `css/site.css` | Nav (sticky), Hero, Sektionen, Tabellen, Formular, Footer |
-| `css/components.css` | Disziplin-Badges, Setup-Karten, Leer-Hinweise, Fahrzeug-Grafik |
-| `css/admin.css` | nur für `admin.html` |
-| `data/content.js` | **der gesamte Inhalt der Website** |
-| `data/anfragen.json` | eingegangene Kontaktanfragen, wird vom Server angelegt |
-| `js/content.js` | schreibt den Inhalt in die Seiten |
-| `js/site.js` | Filter-Chips auf Saison und Galerie |
-| `js/api.js` | alle `/api/*`-Aufrufe an einer Stelle (`window.API`) |
-| `js/kontakt.js` | Kontaktformular |
-| `js/admin.js` | Formular und Speicherlogik des Admin-Bereichs |
-| `server.js` | optionaler Server: Anmeldung + Speichern |
-| `deploy/*` | systemd-Unit, Caddyfile und Sicherungsskript für die Pi |
-| `img/*.jpg` | die Fotos (max. 1800 px) |
+| `css/base.css` | design tokens (`--alpine`, `--anthracite`, `--bbs` …), reset |
+| `css/site.css` | nav (sticky), hero, sections, tables, form, footer |
+| `css/components.css` | discipline badges, setup cards, empty states, car diagram |
+| `css/admin.css` | only for `admin.html` |
+| `data/content.js` | **the entire content of the website** |
+| `data/inquiries.json` | received contact enquiries, created by the server |
+| `data/uploads/` | uploaded images, delivered under `/media/` |
+| `js/labels.js` | German wording for the codes used in the content |
+| `js/content.js` | writes the content into the pages |
+| `js/site.js` | filter chips on the season and gallery pages |
+| `js/api.js` | every `/api/*` call in one place (`window.API`) |
+| `js/contact.js` | contact form |
+| `js/upload.js` | scaling images, uploading, media library |
+| `js/admin.js` | form and saving logic of the admin area |
+| `server.js` | optional server: sign-in + saving |
+| `deploy/*` | systemd unit, Caddyfile and backup script for the Pi |
+| `img/*.jpg` | the photos (max. 1800 px) |
 
-Reihenfolge der Stylesheets ist die Kaskade — `base → site → components` beibehalten.
-Die Skripte müssen in dieser Reihenfolge stehen: `data/content.js` → `js/content.js` →
-`js/site.js`. Wo `js/api.js` gebraucht wird, steht es vor seinen Nutzern — auf
-`kontakt.html` vor `js/kontakt.js`, auf `admin.html` vor `js/admin.js`.
+The order of the stylesheets is the cascade — keep `base → site → components`.
+The scripts must appear in this order: `js/labels.js` → `data/content.js` →
+`js/content.js` → `js/site.js`. Where `js/api.js` is needed it comes before its
+users — on `kontakt.html` before `js/contact.js`, on `admin.html` before
+`js/upload.js` and `js/admin.js`.
 
-Es steht kein JavaScript in den HTML-Dateien. Neues Verhalten kommt in eine Datei
-unter `js/`, nicht in ein `<script>` auf der Seite.
+There is no JavaScript inside the HTML files. New behaviour goes into a file
+under `js/`, not into a `<script>` on the page.
 
-## Wie der Inhalt in die Seite kommt
+## How the content reaches the page
 
-Im HTML steht der Standardtext direkt drin und trägt eine Markierung:
+The default text sits in the HTML directly and carries a marker:
 
 ```html
-<b data-cms="car.getriebe">5-Gang handgeschalten</b>
+<b data-cms="car.gearbox">5-Gang handgeschalten</b>
 ```
 
-`js/content.js` ersetzt den Text durch den Wert aus `data/content.js`. Fehlt die Datei,
-bleibt der Text im HTML stehen — die Seite ist also nie leer. Listen (Partner, Pakete,
-Galerie, Resultate, Journal, Werdegang) werden über Container gefüllt:
-`[data-partners]`, `[data-packages]`, `[data-gallery]`, `[data-events-table]`,
-`[data-journal]`, `[data-timeline]`.
+`js/content.js` replaces the text with the value from `data/content.js`. If the
+file is missing, the text in the HTML stays — so the page is never empty. Lists
+(partners, packages, gallery, results, journal, career) are filled through
+containers: `[data-partners]`, `[data-packages]`, `[data-gallery]`,
+`[data-events-table]`, `[data-journal]`, `[data-timeline]`.
 
-Ein neues Feld anlegen: `data-cms="…"` ins HTML setzen, den Schlüssel in `data/content.js`
-ergänzen und ihn im Katalog `SCHEMA` oben in `js/admin.js` eintragen — das Formular baut
-sich daraus selbst.
+Images work the same way with `data-cms-img`:
 
-## Kontaktformular
-
-`js/kontakt.js` schickt das Formular über `API.post()` an `POST /api/kontakt`. Der
-Server prüft die Adresse, verwirft alles außer den erlaubten Feldern und hängt
-den Eintrag an `data/anfragen.json` an — atomar über eine `.tmp`-Datei, wie bei
-`content.js`. Ein unsichtbares Feld (`website`) fängt Bots ab: ist es gefüllt,
-antwortet der Server `ok`, speichert aber nichts. Pro Adresse sind fünf
-Anfragen je Stunde möglich, gezählt getrennt von den Login-Fehlversuchen.
-
-Gelesen wird die Datei über `GET /api/anfragen` (nur angemeldet, neueste
-zuerst). Ausgeliefert wird sie nie: `isBlocked()` in `server.js` lässt aus
-`data/` einzig `content.js` durch. Da sie in `data/` liegt, ist sie von der
-täglichen Sicherung mit abgedeckt.
-
-Geprüft wird vor dem Absenden mit `form.checkValidity()`; die Regeln stehen als
-`required` und `type="email"` im HTML und nicht ein zweites Mal im Skript. Die
-Statuszeile färbt sich über die Klassen `.is-ok` und `.is-fehler`, deren Farben
-als Tokens `--ok` und `--fehler` in `css/base.css` liegen.
-
-Ohne laufenden Server gibt es keinen Empfänger — auf einem reinen Webspace
-bleibt das Formular ohne Funktion; die Statuszeile nennt dann die Mailadresse.
-
-Noch offen: es geht **keine Benachrichtigung** raus, jemand muss die Anfragen
-im Admin-Bereich abholen. Und `admin.html` zeigt sie noch nicht an, obwohl
-`/api/anfragen` die Daten schon liefert.
-
-## Neue Seite
-
-Eine bestehende Seite kopieren, Inhalt zwischen Nav und Footer ersetzen, `<title>` anpassen.
-Navigation und Footer sind in jeder Seite dupliziert — ein neuer Navigationspunkt muss
-in allen Dateien ergänzt werden.
-
-## Betrieb auf der Raspberry Pi
-
-Die Website läuft auf der Pi als Dienst. Davor sitzt Caddy, und ganz vorne ein
-Cloudflare Tunnel, der HTTPS und die Erreichbarkeit übernimmt. Alle Vorlagen
-liegen in `deploy/`.
-
-```
-Internet ──► Cloudflare ──► Tunnel ──► Caddy ──► node server.js
-             Edge/TLS       ausgehend  :8080     127.0.0.1:4000
+```html
+<img data-cms-img="index.heroImage" src="img/wolken-dreiviertel.jpg" alt="…">
 ```
 
-Der Tunnel wird **von der Pi nach aussen** aufgebaut und offen gehalten. Es gibt
-damit keine Portweiterleitung, kein DDNS, kein Zertifikat zu verwalten, und die
-IP-Adresse des Anschlusses steht nicht im Netz. Node und Caddy lauschen beide nur
-auf `127.0.0.1` und sind von aussen nie direkt erreichbar.
+For longer text there is `data-cms-para`. It fills the container with one `<p>`
+per paragraph, where a blank line in the saved value starts a new one. The
+about page uses it for the three long sections, so Nick can write several
+paragraphs without any markup:
 
-### 1. Voraussetzungen
+```html
+<div data-cms-para="about.motivation">
+  <p>Fallback, stays in place if nothing is saved.</p>
+</div>
+```
 
-Node 18 oder neuer (`node -v`). Raspberry Pi OS Bookworm bringt das mit,
-sonst über NodeSource nachinstallieren.
+Adding a new field: put `data-cms="…"` in the HTML, add the key to
+`data/content.js`, and enter it in the `SCHEMA` catalogue at the top of
+`js/admin.js` — the form builds itself from that.
 
-### 2. Dienst einrichten
+## Images
 
-Projekt nach `/home/pi/nick-blog` legen (andere Pfade in der Unit anpassen), dann:
+Images are picked in the admin area, not copied over SSH. Every image field can
+do three things: choose a file from the device, take an already uploaded image
+from the **media library**, or remove the image. A file can also be dragged
+straight onto the field.
+
+**Scaling happens in the browser** before anything is uploaded (`js/upload.js`):
+to at most 2000 px on the long edge, as WebP, plus a 480 px thumbnail. That way
+the Pi needs no image library, has nothing to compute, and a 4 MB phone photo
+becomes roughly 200 KB. Smaller images are never scaled up.
+
+Files are stored in `data/uploads/` and delivered under `/media/`. Two reasons
+for the split: `data/` is the only directory the service may write to
+(`ReadWritePaths` in the systemd unit), and the rule “nothing below `/data/` is
+public except `content.js`” stays intact. The file name is generated from random
+bytes on the server — the name coming from the browser is never used.
+
+On every upload the server checks the **magic bytes** (`RIFF…WEBP`) rather than
+the Content-Type that was sent along, and limits to 3 MB per image and 300 MB
+for the whole directory. Because an image never changes under its name, it is
+delivered with `max-age=31536000, immutable`.
+
+Where a thumbnail exists, `js/content.js` offers both sizes via `srcset`. That
+counts most in the gallery: nine tiles at a third of the width each used to pull
+the image at full size.
+
+Deleting asks the server first. If the image is still referenced anywhere in the
+content, it names the places and only deletes on confirmation — otherwise an
+image would quietly vanish from a page.
+
+The existing photos in `img/` are untouched and keep working; an image field
+also accepts a plain path as its value.
+
+## Journal
+
+An entry has a date, a discipline, a title, a **lead image** and text. A blank
+line in the text starts a new paragraph — there is deliberately no more
+formatting than that.
+
+## Codes instead of display text
+
+Discipline and gallery category are stored in the content as codes (`rally`,
+`hillclimb`, `build`, `car`), with the German words for them in `js/labels.js`.
+Free surfaces are a `true`/`false`, not a text.
+
+This is not for its own sake: previously the code read the German display text
+back out of the page — a discipline starting with “rall” was coloured as a
+rally, and a surface counted as taken if the rendered text matched “vergeben”.
+A renamed label therefore silently changed the styling and broke the filters.
+Now code decides on code, and a label is only ever text.
+
+Filter chips carry their code in `data-filter`, the filtered elements in
+`data-tag`.
+
+## Language in the code
+
+Identifiers, comments, this documentation, the keys in `data/content.js`, the log
+and command-line output of the server and the whole admin area are **English**.
+
+German is only what a visitor of the finished website reads: the page content
+itself, plus the answers of `/api/contact` and the static 404 page, because those
+appear on the site. `js/api.js` therefore carries English messages and
+`js/contact.js` assembles the German sentence for the visitor itself, instead of
+passing an English one through.
+
+The page file names stay German (`das-auto.html`, `galerie.html`,
+`sponsorflaechen.html` …) — those are public addresses, and renaming them would
+break links, bookmarks and search results without improving anything inside.
+
+Two more things stay German by necessity: the values in `js/labels.js`, which are
+the words shown on the site, and the legacy keys `firma`/`telefon`/`nachricht`/
+`betreff`/`eingang`, which the enquiries tab still reads because records written
+before the rename carry them and an arrived enquiry is never rewritten.
+
+## Contact form
+
+`js/contact.js` sends the form through `API.post()` to `POST /api/contact`. The
+server checks the address, discards everything but the permitted fields and
+appends the entry to `data/inquiries.json` — atomically through a `.tmp` file, as
+with `content.js`. An invisible field (`website`) catches bots: if it is filled
+in, the server answers `ok` but stores nothing. Five enquiries per address per
+hour are possible, counted separately from the failed sign-ins.
+
+The file is read through `GET /api/inquiries` (signed in only, newest first). It
+is never delivered: `isBlocked()` in `server.js` lets only `content.js` out of
+`data/`. Because it lives in `data/`, it is covered by the daily backup.
+
+Validation before sending uses `form.checkValidity()`; the rules live in the HTML
+as `required` and `type="email"` and not a second time in the script. The status
+line is coloured through the classes `.is-ok` and `.is-error`, whose colours are
+the tokens `--ok` and `--error` in `css/base.css`.
+
+The enquiries are shown in the admin area under **Enquiries**. The tab lists them
+newest first, with the address as a `mailto:` link for replying directly; the
+number next to the tab is how many are still unread. Which ones have been read is
+kept in `data/inquiries-read.json` — a file of its own, so that `inquiries.json`
+is only ever appended to and an arrived enquiry is never overwritten.
+
+In addition a **notification e-mail** goes out, if set up (see 3d). Order inside
+the server: the enquiry is stored first, then the visitor gets their answer, and
+only after that is the mail sent. A slow or failed mail service therefore cannot
+affect the form — at worst the mail is missing and the enquiry is in the admin
+area anyway.
+
+Without a running server there is no recipient — on a plain web space the form
+has no function; the status line then names the mail address.
+
+## Hardening
+
+What `server.js` does by itself — regardless of whether Caddy and Cloudflare are
+configured correctly:
+
+| Measure | Where | Effect |
+|---|---|---|
+| Known file types only | `isBlocked()` / `TYPES` | Anything without an extension from `TYPES` is not delivered. `README.md` and `events-schema.json` are therefore no longer retrievable — they gave away the structure, the paths and which endpoints are open. A file added later is not public by accident. |
+| Security headers | `SECURITY_HEADERS` | CSP, `nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` on **every** answer. Deliberately here and not in the Caddyfile: it applies to local development too and survives a mistake in the proxy configuration. Only HSTS stays in Caddy. |
+| Slowing down sign-in | `clientIp()` | `X-Forwarded-For` is read **from the right**. Caddy appends the peer it actually saw; everything left of that comes from the caller. Read from the left the lockout was useless — rotating invented addresses in the header gave unlimited password attempts. Behind the tunnel `CF-Connecting-IP` decides anyway. |
+| Bounding memory | sweeper | One timer clears out sessions **and** both counter maps. Previously a counter entry only disappeared when the same address came back — anyone rotating addresses could fill up the Pi's memory. |
+| Oversized requests | `readBody()` | Answers **413** with a reason instead of dropping the connection. Previously a message that was too long looked like a broken website. |
+
+The CSP allows `script-src 'self'` without exception — there is no `<script>`
+with content and no `onclick` attribute anywhere in the project. For `style-src`
+`'unsafe-inline'` is needed, because the pages carry `style` attributes and
+`js/content.js` writes to `.style` directly.
+
+Not in the code but set up by hand, and therefore worth checking regularly:
+**Cloudflare Access** in front of `/admin.html` and the admin endpoints (see 3b),
+plus the rate-limiting rule from 3a. Without Access, `/admin.html` is reachable
+on the internet and protected by the password alone.
+
+## New page
+
+Copy an existing page, replace the content between nav and footer, adjust
+`<title>`. Navigation and footer are duplicated in every page — a new navigation
+item has to be added in all files.
+
+## Running on the Raspberry Pi
+
+The website runs on the Pi as a service. In front of it sits Caddy, and right at
+the front a Cloudflare tunnel that takes care of HTTPS and reachability. All
+templates are in `deploy/`.
 
 ```
-node server.js --set-password nick "ein-langes-passwort"
+Internet ──► Cloudflare ──► tunnel  ──► Caddy ──► node server.js
+             edge/TLS       outbound     :8080     127.0.0.1:4000
+```
+
+The tunnel is opened **from the Pi outwards** and kept open. That means no port
+forwarding, no DDNS, no certificate to manage, and the IP address of the line is
+not published. Node and Caddy both listen on `127.0.0.1` only and are never
+reachable directly from outside.
+
+### 1. Requirements
+
+Node 18 or newer (`node -v`). Raspberry Pi OS Bookworm ships it; otherwise
+install it through NodeSource.
+
+### 2. Setting up the service
+
+Put the project in `/home/pi/nick-blog` (adjust other paths in the unit), then:
+
+```
+node server.js --set-password nick "a-long-password"
 sudo cp deploy/nickberdi.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now nickberdi
 systemctl status nickberdi
 ```
 
-`enable` sorgt dafür, dass der Dienst nach einem Stromausfall von selbst wieder
-hochkommt. Logs: `journalctl -u nickberdi -f`.
+`enable` makes sure the service comes back up by itself after a power cut.
+Logs: `journalctl -u nickberdi -f`.
 
-### 3. Cloudflare Tunnel einrichten
+### 3. Setting up the Cloudflare tunnel
 
-Die Domain liegt bei Cloudflare, Zone und Nameserver bestehen also schon.
+The domain is at Cloudflare, so the zone and name servers already exist.
 
 ```
 sudo mkdir -p --mode=0755 /usr/share/keyrings
@@ -178,26 +307,25 @@ echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudf
 sudo apt update && sudo apt install cloudflared
 ```
 
-Im Dashboard unter **Zero Trust → Networks → Tunnels** einen Tunnel `nickberdi`
-anlegen, den angezeigten Installationsbefehl auf der Pi ausführen:
+In the dashboard under **Zero Trust → Networks → Tunnels** create a tunnel
+`nickberdi` and run the installation command it shows on the Pi:
 
 ```
-sudo cloudflared service install <TOKEN-AUS-DEM-DASHBOARD>
+sudo cloudflared service install <TOKEN-FROM-THE-DASHBOARD>
 sudo systemctl status cloudflared
 ```
 
-Dann im Reiter **Public Hostname** zwei Einträge anlegen, beide auf Caddy:
+Then create two entries in the **Public Hostname** tab, both pointing at Caddy:
 
 | Subdomain | Domain | Service |
 |---|---|---|
-| *(leer)* | berdi-racing.com | `HTTP` → `localhost:8080` |
+| *(empty)* | berdi-racing.com | `HTTP` → `localhost:8080` |
 | `www` | berdi-racing.com | `HTTP` → `localhost:8080` |
 
-Cloudflare legt die DNS-Einträge selbst an (proxied `CNAME` auf
-`<tunnel-id>.cfargotunnel.com`). **Alte `A`-Einträge für `@` und `www`, die auf
-die Heim-IP zeigen, vorher löschen** — bleiben sie stehen, gibt es sporadische
-Ausfälle, die schwer zu finden sind. Portweiterleitung im Router und DDNS können
-jetzt weg.
+Cloudflare creates the DNS records itself (proxied `CNAME` to
+`<tunnel-id>.cfargotunnel.com`). **Delete the old `A` records for `@` and `www`
+that point at the home IP first** — if they stay, there are sporadic outages that
+are hard to track down. Port forwarding in the router and DDNS can go now.
 
 ```
 sudo apt install caddy
@@ -207,69 +335,108 @@ sudo systemctl reload caddy
 curl -sI -H "Host: berdi-racing.com" http://127.0.0.1:8080/ | head -1   # 200
 ```
 
-### 3a. Einstellungen in der Cloudflare-Oberfläche
+### 3a. Settings in the Cloudflare interface
 
-| Bereich | Einstellung | Wert |
+| Area | Setting | Value |
 |---|---|---|
 | SSL/TLS | Encryption mode | Full (strict) |
-| SSL/TLS → Edge Certificates | Always Use HTTPS | An |
+| SSL/TLS → Edge Certificates | Always Use HTTPS | on |
 | SSL/TLS → Edge Certificates | Minimum TLS Version | 1.2 |
-| Security | WAF Managed Ruleset | An |
-| Security | Rate-Limiting-Regel | `/api/login`, 5 pro Minute je IP |
-| Caching → Cache Rules | Pfad beginnt mit `/img/` | Edge TTL 1 Monat |
-| Caching → Cache Rules | `/admin.html`, `/data/content.js`, `/api/*` | Bypass cache |
+| Security | WAF Managed Ruleset | on |
+| Security | rate-limiting rule | `/api/login`, 5 per minute per IP |
+| Caching → Cache Rules | path starts with `/img/` | edge TTL 1 month |
+| Caching → Cache Rules | path starts with `/media/` | edge TTL 1 month |
+| Caching → Cache Rules | `/admin.html`, `/data/content.js`, `/api/*` | bypass cache |
 
-Die Bilder aus dem Edge-Cache auszuliefern nimmt der SD-Karte die Arbeit ab —
-genau dem Bauteil, das als erstes ausfällt.
+Serving the images from the edge cache takes the work off the SD card — exactly
+the part that fails first.
 
-### 3b. Admin-Bereich absichern
+### 3b. Securing the admin area
 
-Unter **Zero Trust → Access → Applications** eine *Self-hosted* Anwendung
-anlegen, Policy *Allow* mit den eigenen Mailadressen und Einmal-PIN. Die
-Anmeldung von `server.js` bleibt als zweite Hürde dahinter bestehen.
+Under **Zero Trust → Access → Applications** create a *Self-hosted* application,
+policy *Allow* with your own mail addresses and one-time PIN. The sign-in of
+`server.js` remains behind it as a second hurdle.
 
-Als Pfade **einzeln** eintragen — nicht `/api` pauschal:
+Enter the paths **individually** — not `/api` wholesale:
 
 ```
 berdi-racing.com/admin.html
 berdi-racing.com/api/content
-berdi-racing.com/api/anfragen
+berdi-racing.com/api/inquiries
+berdi-racing.com/api/upload
+berdi-racing.com/api/uploads
 ```
 
-`/api/kontakt` muss öffentlich bleiben, sonst landet das Kontaktformular für
-jeden Besucher auf der Access-Anmeldung statt beim Empfänger. `/api/login`,
-`/api/session` und `/api/logout` bleiben ebenfalls offen; sie sind durch das
-Passwort geschützt und durch die Rate-Limiting-Regel aus 3a gebremst.
+`/api/contact` has to stay public, otherwise every visitor's contact form ends up
+at the Access sign-in instead of at the recipient. `/api/login`, `/api/session`
+and `/api/logout` stay open as well; they are protected by the password and
+slowed down by the rate-limiting rule from 3a.
 
-Sitzungsdauer auf 24 Stunden setzen: läuft die Access-Sitzung mitten im
-Bearbeiten ab, bekommt `js/admin.js` beim Speichern die Anmeldeseite von
-Cloudflare statt JSON zurück und meldet einen unverständlichen Fehler.
+Set the session length to 24 hours: if the Access session expires in the middle
+of editing, `js/admin.js` gets Cloudflare's sign-in page instead of JSON when
+saving and reports a confusing error.
 
-### 3c. Nutzung auswerten
+### 3c. Measuring usage
 
-Zwei verschiedene Dinge, beide kostenlos:
+Two different things, both free:
 
-- **Analytics & Logs → Traffic** ist automatisch da, sobald der Verkehr über
-  Cloudflare läuft: Anfragen, Datenmenge, Cache-Quote, Statuscodes, Länder,
-  abgewehrte Angriffe. Zählt auch Suchmaschinen und Bots.
-- **Analytics & Logs → Web Analytics** ist die Besucherzahl, die man einem
-  Partner zeigt: Seitenaufrufe, Besuche, meistbesuchte Seiten, Verweise, Geräte.
-  Bei **Add a site** die Domain aus der Liste wählen — weil die Zone proxied
-  ist, spielt Cloudflare das Zählpixel selbst ein, es ist nichts am Code zu
-  ändern. Ohne Cookies und ohne Fingerprinting, ein Cookie-Banner braucht es
-  darum nicht; im Impressum erwähnen sollte man es trotzdem.
+- **Analytics & Logs → Traffic** is there automatically as soon as the traffic
+  goes through Cloudflare: requests, data volume, cache ratio, status codes,
+  countries, blocked attacks. It counts search engines and bots too.
+- **Analytics & Logs → Web Analytics** is the visitor count you show a partner:
+  page views, visits, most visited pages, referrers, devices. Under **Add a
+  site** pick the domain from the list — because the zone is proxied, Cloudflare
+  injects the counting pixel itself and there is nothing to change in the code.
+  Without cookies and without fingerprinting, so no cookie banner is needed; it
+  should still be mentioned in the imprint.
 
-Die Aufbewahrungsdauer im kostenlosen Tarif ist begrenzt — für einen
-Saisonrückblick die Monatszahlen unterwegs exportieren.
+Retention on the free plan is limited — for a season review, export the monthly
+figures as you go.
 
-Zum Schluss unter **Notifications** eine Meldung für **Tunnel Health** auf die
-eigene Mailadresse legen. Ohne offene Ports von aussen ist das der einzige Weg
-zu erfahren, dass die Pi steht.
+Finally, under **Notifications**, set an alert for **Tunnel Health** to your own
+mail address. Without open ports from outside that is the only way to find out
+that the Pi is down.
 
-### 4. Sicherungen
+### 3d. Notification for new enquiries
 
-`data/backups/` schützt vor einer verunglückten Änderung, liegt aber auf derselben
-SD-Karte wie alles andere. SD-Karten fallen irgendwann aus — deshalb zusätzlich:
+Optional. Without this setup simply no mail is sent; the enquiry still lands in
+`data/inquiries.json` and in the admin area.
+
+The Pi cannot send mail itself — a residential line has no reputation, so the
+message lands in spam or is refused outright. Hence a sending service; here
+[Resend](https://resend.com), whose free tier is enough for a few enquiries a
+month.
+
+1. Create an account, add `berdi-racing.com` under **Domains** and enter the
+   **SPF and DKIM records** it shows at Cloudflare under DNS. Without this step
+   Resend refuses to send.
+2. Under **API Keys** create a key with sending permission.
+3. Store it on the Pi — in a file of its own, **not** in the systemd unit, since
+   that one is in the repository:
+
+```
+sudo install -m 600 /dev/null /etc/nickberdi.env
+sudo tee /etc/nickberdi.env >/dev/null <<'ENV'
+RESEND_API_KEY=re_...
+MAIL_TO=nick@berdi-racing.com
+MAIL_FROM=website@berdi-racing.com
+ENV
+sudo systemctl restart nickberdi
+```
+
+`MAIL_FROM` has to be on the domain verified at Resend. `MAIL_TO` is who gets
+notified. The sender address of the enquiry is set as `Reply-To` — a reply
+therefore goes straight to the interested party.
+
+To check: send an enquiry through the form and look at
+`journalctl -u nickberdi -n 20`. If `[mail] Resend answered 401` appears there,
+the key is wrong; with `422` the domain verification is missing. In both cases
+the enquiry is stored anyway.
+
+### 4. Backups
+
+`data/backups/` protects against a botched change, but it sits on the same SD
+card as everything else. SD cards fail eventually — hence additionally:
 
 ```
 sudo cp deploy/nickberdi-backup.{service,timer} /etc/systemd/system/
@@ -277,40 +444,45 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now nickberdi-backup.timer
 ```
 
-Das legt täglich einen datierten Schnappschuss unter `~/backups/nickberdi` ab und
-behält die letzten 30. Um zusätzlich auf ein anderes Gerät zu kopieren, in
-`nickberdi-backup.service` ein Ziel ergänzen:
+That puts a dated snapshot under `~/backups/nickberdi` every day and keeps the
+last 30. Uploaded images are excluded from the archive on purpose — they would
+sit in all 30 copies. To additionally copy to another machine, add a target in
+`nickberdi-backup.service`:
 
 ```
 ExecStart=/home/pi/nick-blog/deploy/backup-content.sh pi@nas:/backups/website
 ```
 
-Wiederherstellen ist ein Entpacken:
+With a target given, `data/uploads/` is synced there separately and
+incrementally, so only new images go over the wire.
+
+Restoring is an unpacking:
 
 ```
 tar -xzf ~/backups/nickberdi/data-2027-03-14_030000.tar.gz -C /home/pi/nick-blog
 sudo systemctl restart nickberdi
 ```
 
-### 5. Warum eine Datei und keine Datenbank
+### 5. Why a file and not a database
 
-Der gesamte Inhalt ist ein einziges Dokument von wenigen Kilobyte, das ein- bis
-zweimal im Monat geändert wird. Postgres würde auf einer Pi dauerhaft Arbeitsspeicher
-belegen und durch sein Write-Ahead-Log ständig auf die SD-Karte schreiben — genau das
-Bauteil, das als erstes ausfällt. Eine Datei kostet nichts, ist über Caddy zwischen-
-speicherbar, lässt sich mit `cat` lesen und mit `tar` sichern. Eine Datenbank lohnt
-sich erst, wenn wirklich abgefragt werden muss (viele Journal-Beiträge mit Suche,
-Zeiten über viele Veranstaltungen hinweg) — und dann wäre SQLite der nächste Schritt,
-nicht Postgres.
+The entire content is a single document of a few kilobytes, changed once or twice
+a month. Postgres would permanently occupy memory on a Pi and, through its
+write-ahead log, constantly write to the SD card — exactly the part that fails
+first. A file costs nothing, can be cached through Caddy, can be read with `cat`
+and backed up with `tar`. A database only pays off once there is really something
+to query (many journal posts with search, times across many events) — and then
+SQLite would be the next step, not Postgres.
 
-## Offene Punkte
+## Open points
 
-- Noch ohne Ziel (`href="#"`): Impressum, „Unterlagen (PDF)“, „Medienpaket (ZIP)“.
-- Kennzahlen (Renntage, Instagram, Reichweite) und die Leiste „Nächster Start“ stehen
-  bewusst auf `—`, bis die Zahlen feststehen. Beides ist im Admin-Bereich änderbar.
-- Resultate und Journal sind leer, weil noch keine Saison gefahren ist. Sobald der erste
-  Eintrag erfasst ist, erscheinen Tabelle bzw. Beitragsliste automatisch.
-- Die Fahrzeug-Grafik auf `sponsorflaechen.html` ist eine Schemazeichnung (SVG), kein Foto.
-  Flächen auf „vergeben“ zu setzen färbt sie in der Grafik grau.
-- Eingegangene Anfragen lösen keine Mail aus — sie müssen im Admin-Bereich
-  abgeholt werden, und `admin.html` zeigt sie noch nicht an.
+- Still without a target (`href="#"`): imprint, “Unterlagen (PDF)”, “Medienpaket (ZIP)”.
+- The key figures (race days, Instagram, reach) and the “next start” strip are
+  deliberately set to `—` until the numbers are settled. Both are editable in the
+  admin area.
+- Results and journal are empty because no season has been driven yet. As soon as
+  the first entry exists, the table and the post list appear automatically.
+- The car diagram on `sponsorflaechen.html` is a schematic drawing (SVG), not a
+  photo. Ticking a surface as taken colours it grey in the diagram.
+- The photos in `img/` are still the original JPEGs. Re-uploaded through the admin
+  area they become WebP with a thumbnail, which makes the gallery in particular
+  lighter. It is not necessary — old paths keep working.

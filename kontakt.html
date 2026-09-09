@@ -15,25 +15,25 @@
   <div class="tri"><i></i><i></i><i></i></div>
   <nav class="nav">
     <div class="mark">
-      <svg class="kid" viewBox="0 0 34 18" width="30" height="16" aria-hidden="true"><rect x=".8" y=".8" width="14.6" height="16.4" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="18.6" y=".8" width="14.6" height="16.4" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.2 2.4v13.2M8.4 2.4v13.2M11.6 2.4v13.2M22.8 2.4v13.2M26 2.4v13.2M29.2 2.4v13.2" stroke="currentColor" stroke-width=".9" opacity=".5"/></svg>
+      <svg class="grille" viewBox="0 0 34 18" width="30" height="16" aria-hidden="true"><rect x=".8" y=".8" width="14.6" height="16.4" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="18.6" y=".8" width="14.6" height="16.4" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.2 2.4v13.2M8.4 2.4v13.2M11.6 2.4v13.2M22.8 2.4v13.2M26 2.4v13.2M29.2 2.4v13.2" stroke="currentColor" stroke-width=".9" opacity=".5"/></svg>
       <b data-cms="site.name">NICK BERDI</b><span data-cms="site.tag">E30</span>
     </div>
-    <a href="index.html">Start</a><a href="das-auto.html">Das Auto</a><a href="saison.html">Saison</a><a href="galerie.html">Galerie</a><a href="journal.html">Journal</a>
+    <a href="index.html">Start</a><a href="ueber-mich.html">Über mich</a><a href="das-auto.html">Das Auto</a><a href="saison.html">Saison</a><a href="galerie.html">Galerie</a><a href="journal.html">Journal</a>
     <a href="partner.html" class="cta">Partner</a>
   </nav>
   <section class="sec"><div class="wrap contact-grid" style="display:grid;grid-template-columns:1.15fr .85fr;gap:30px">
     <div>
       <h2 style="font-size:31px">Lass uns in Kontakt treten</h2>
-      <p class="lede" data-cms="kontakt.lede">Formular ausfüllen, und die vollständigen Unterlagen kommen per Mail — mit Antwort innert zwei Tagen.</p>
-      <form class="form" id="kontaktForm" novalidate>
+      <p class="intro" data-cms="contact.intro">Formular ausfüllen, und die vollständigen Unterlagen kommen per Mail — mit Antwort innert zwei Tagen.</p>
+      <form class="form" id="contactForm" novalidate>
         <div class="two">
           <div class="field">
             <label for="kf-name">Ihr Name</label>
             <input id="kf-name" name="name" autocomplete="name" placeholder="Anna Meier" required>
           </div>
           <div class="field">
-            <label for="kf-firma">Firma</label>
-            <input id="kf-firma" name="firma" autocomplete="organization" placeholder="Meier Bau AG">
+            <label for="kf-company">Firma</label>
+            <input id="kf-company" name="company" autocomplete="organization" placeholder="Meier Bau AG">
           </div>
         </div>
 
@@ -44,8 +44,8 @@
         </div>
 
         <div class="field">
-          <label for="kf-betreff">Woran sind Sie interessiert?</label>
-          <select id="kf-betreff" name="betreff">
+          <label for="kf-subject">Woran sind Sie interessiert?</label>
+          <select id="kf-subject" name="subject">
             <option value="Unterlagen">Schicken Sie mir die Unterlagen</option>
             <option value="Klebeflaeche">Klebefläche am Auto</option>
             <option value="Naturalleistung">Material oder Leistung statt Geld</option>
@@ -56,13 +56,13 @@
         </div>
 
         <div class="field">
-          <label for="kf-nachricht">Sonst noch etwas, das wir wissen sollten?</label>
-          <textarea id="kf-nachricht" name="nachricht" rows="3"
+          <label for="kf-message">Sonst noch etwas, das wir wissen sollten?</label>
+          <textarea id="kf-message" name="message" rows="3"
                     placeholder="Wir unterstützen ein lokales Team pro Jahr und entscheiden jeweils im November."></textarea>
         </div>
 
-        <!-- Honigtopf. Für Menschen unsichtbar, Bots füllen ihn aus.
-             Nicht display:none — das erkennen manche Bots. -->
+        <!-- Honeypot. Invisible to people, bots fill it in.
+             Not display:none — some bots detect that. -->
         <div aria-hidden="true"
              style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden">
           <label for="kf-website">Website</label>
@@ -76,12 +76,12 @@
     <aside>
       <div style="background:var(--anthracite);color:var(--alpine);padding:18px;border-top:3px solid var(--bbs)">
         <h3 style="font-size:19px;margin:0 0 8px">Mit wem Sie sprechen</h3>
-        <p style="color:#B4BABD;font-size:14px;margin:0 0 12px" data-cms="kontakt.asideText">Ansprechperson für Partneranfragen, Verträge und Termine ist Nick Berdi.</p>
-        <div class="mono" style="font-size:13px;color:#E4E8EA;line-height:1.9"><span data-cms="kontakt.mail">nick@berdi-racing.com</span><br><span data-cms="kontakt.tel">+41 78 696 50 98</span><br><span data-cms="kontakt.ort">Thurgau, Schweiz</span></div>
+        <p style="color:#B4BABD;font-size:14px;margin:0 0 12px" data-cms="contact.asideText">Ansprechperson für Partneranfragen, Verträge und Termine ist Nick Berdi.</p>
+        <div class="mono" style="font-size:13px;color:#E4E8EA;line-height:1.9"><span data-cms="contact.mail">nick@berdi-racing.com</span><br><span data-cms="contact.phone">+41 78 696 50 98</span><br><span data-cms="contact.city">Thurgau, Schweiz</span></div>
       </div>
       <div style="border:1px solid var(--line);background:var(--chalk);padding:16px;margin-top:14px">
         <b style="font-family:Archivo,sans-serif;font-size:17px">Lieber nur lesen?</b>
-        <p style="font-size:14px;color:#4E5357;margin:6px 0 12px" data-cms="kontakt.pdfText">Die Unterlagen enthalten den Kalender beider Disziplinen, das Budget, Lackierungsentwürfe und eine Übersicht der freien Flächen am Auto.</p>
+        <p style="font-size:14px;color:#4E5357;margin:6px 0 12px" data-cms="contact.pdfText">Die Unterlagen enthalten den Kalender beider Disziplinen, das Budget, Lackierungsentwürfe und eine Übersicht der freien Flächen am Auto.</p>
         <a href="#" class="btn btn-d" style="font-size:13.5px;padding:8px 14px">Unterlagen laden (PDF)</a>
       </div>
     </aside>
@@ -89,16 +89,17 @@
   <footer class="foot"><div class="wrap cols">
     <div><b style="font-family:Archivo,sans-serif;font-size:15px;color:#E4E8EA" data-cms="site.footerBrand">NICK BERDI · E30</b>
       <p style="margin:6px 0 0;max-width:34ch" data-cms="site.footerText">Junioren-Motorsport, Thurgau. Bergrennen und Rallye mit einem BMW E30 von 1990.</p></div>
-    <div><a href="das-auto.html">Das Auto</a><br><a href="saison.html">Saison</a><br><a href="galerie.html">Galerie</a><br><a href="journal.html">Journal</a><br><a href="kontakt.html">Kontakt</a></div>
+    <div><a href="ueber-mich.html">Über mich</a><br><a href="das-auto.html">Das Auto</a><br><a href="saison.html">Saison</a><br><a href="galerie.html">Galerie</a><br><a href="journal.html">Journal</a><br><a href="kontakt.html">Kontakt</a></div>
     <div>Instagram<br>YouTube<br><a href="#">Unterlagen (PDF)</a><br><a href="impressum.html">Impressum</a></div>
   </div></footer>
   <div class="tri"><i></i><i></i><i></i></div>
 </div>
 
+<script src="js/labels.js"></script>
 <script src="data/content.js"></script>
 <script src="js/content.js"></script>
 <script src="js/site.js"></script>
 <script src="js/api.js"></script>
-<script src="js/kontakt.js"></script>
+<script src="js/contact.js"></script>
 
 </html>

@@ -1,4 +1,4 @@
-# Sichert den Inhalt täglich.
+# Backs up the content daily.
 #
 #   sudo cp deploy/nickberdi-backup.{service,timer} /etc/systemd/system/
 #   sudo systemctl daemon-reload
@@ -6,11 +6,11 @@
 #   systemctl list-timers nickberdi-backup
 
 [Unit]
-Description=Tägliche Sicherung des Website-Inhalts
+Description=Daily backup of the website content
 
 [Timer]
 OnCalendar=daily
-# Nachholen, falls die Pi zum geplanten Zeitpunkt aus war.
+# Catch up if the Pi was off at the scheduled time.
 Persistent=true
 RandomizedDelaySec=15m
 

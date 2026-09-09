@@ -1,7 +1,7 @@
-/* Inhalt der Website — einzige Quelle der Wahrheit.
-   Wird vom Admin-Bereich (admin.html) geschrieben, nicht von Hand.
-   Bewusst eine .js-Datei: so laesst sich die Seite auch ohne Server
-   direkt per Doppelklick oeffnen (fetch() waere hier durch CORS blockiert). */
+/* Content of the website — the single source of truth.
+   Written by the admin area (admin.html), never by hand.
+   Deliberately a .js file: that way the site can also be opened by simply
+   double-clicking it, where fetch() would be blocked by CORS. */
 window.SITE_CONTENT = {
   "site": {
     "name": "NICK BERDI",
@@ -23,75 +23,139 @@ window.SITE_CONTENT = {
     "lastTitle": "Noch zu fahren",
     "lastText": "Es ist noch kein Rennen gefahren. Sobald der erste Start absolviert ist, stehen hier Zeiten, Klassement und ein kurzer Bericht — Lauf für Lauf.",
     "partnersTitle": "Wer auf dem Auto steht",
-    "partnersLede": "Diese Partner unterstützen die Saison."
+    "partnersIntro": "Diese Partner unterstützen die Saison.",
+    "heroImage": {
+      "src": "img/wolken-dreiviertel.jpg",
+      "w": 1200,
+      "h": 1800,
+      "alt": "Weisser BMW E30 auf einem Alpenpass in der Dämmerung"
+    }
+  },
+  "about": {
+    "title": "Nick Berdi",
+    "sub": "17, Thurgau — und ein E30, der noch nicht fertig ist",
+    "intro": "Ich fahre Bergrennen und Rallye. Angefangen hat das am Simulator, weiter ging es im Kart, und jetzt steht ein eigenes Auto in der Garage.",
+    "heroImage": {
+      "src": "img/nick-auf-haube.jpg",
+      "w": 1200,
+      "h": 1800,
+      "alt": "Nick Berdi vor seinem BMW E30"
+    },
+    "factBorn": "2008",
+    "factHome": "Thurgau",
+    "factDisciplines": "Bergrennen · Rallye",
+    "factLicence": "—",
+    "motivationTitle": "Warum ich das mache",
+    "motivation": "Am Motorsport reizt mich, dass er nichts verzeiht und nichts geschenkt gibt. Am Berg zählt ein einziger Lauf: kein zweiter Versuch, keine Runde, auf der sich ein Fehler noch ausbügeln lässt. In der Rallye kommt dazu, dass man eine Strecke fährt, die man nicht kennt, und einem Zettel und dem Menschen daneben vertrauen muss.",
+    "startTitle": "Wie es angefangen hat",
+    "start": "Zuerst am Simulator, Stage für Stage: Aufschrieb lesen, Bremspunkte finden, verstehen, was ein Auto unter Last macht. Danach Rental-Karting mit echter Startaufstellung und echten Gegnern — die günstigste Art, Renndistanz zu sammeln.",
+    "goalsTitle": "Was ich vorhabe",
+    "goals": "Die erste eigene Saison sauber durchbringen: ankommen, Zeiten sammeln, aus jedem Start etwas mitnehmen. Ein Klassenpodest wäre schön, ist aber nicht das Ziel für das erste Jahr — gefahrene Kilometer sind mehr wert als ein einzelnes Resultat.",
+    "ctaTitle": "Mitfahren?",
+    "ctaText": "Eine Saison im Motorsport kostet Geld, und ohne Partner geht es nicht. Wer wissen will, was eine Zusammenarbeit bringt, findet die Unterlagen auf der Partner-Seite.",
+    "ctaBtn1": "Partner werden",
+    "ctaBtn2": "Direkt schreiben"
   },
   "car": {
-    "motor": "2.5 Liter BMW",
-    "antrieb": "Hinterrad",
-    "gewicht": "1'000 kg",
-    "disziplinen": "Rallye · Bergrennen",
-    "fahrgestell": "E30 Coupé, BJ 1990",
-    "motorLang": "2.5 Liter BMW",
-    "leistung": "ca. 170 PS",
-    "getriebe": "5-Gang handgeschalten",
-    "gewichtLang": "1'000 kg fahrfertig",
-    "raeder": "BBS Kreuzspeiche 15\"",
-    "sicherheit": "Überrollkäfig",
-    "lack": "Weiss"
+    "engine": "2.5 Liter BMW",
+    "drivetrain": "Hinterrad",
+    "weight": "1'000 kg",
+    "disciplines": "Rallye · Bergrennen",
+    "chassis": "E30 Coupé, BJ 1990",
+    "engineLong": "2.5 Liter BMW",
+    "power": "ca. 170 PS",
+    "gearbox": "5-Gang handgeschalten",
+    "weightLong": "1'000 kg fahrfertig",
+    "wheels": "BBS Kreuzspeiche 15\"",
+    "safety": "Überrollkäfig",
+    "paint": "Weiss"
   },
-  "auto": {
+  "carPage": {
     "title": "BMW 325i, Baujahr 1990",
-    "lede": "Mit 16 als halbfertiges Bergrennen-Auto mit einigen Baustellen gekauft, aktuell im Umbau für meine erste Saison.",
+    "intro": "Mit 16 als halbfertiges Bergrennen-Auto mit einigen Baustellen gekauft, aktuell im Umbau für meine erste Saison.",
     "setupsTitle": "Ein Auto, zwei Disziplinen",
-    "rallyeTitle": "Etappe für Etappe",
-    "rallyeText": "Auf abgesperrten Strassen gegen die Uhr, auf Asphalt genauso wie auf Schotter. Der Beifahrer sagt jede Kurve an, bevor sie zu sehen ist — man vertraut einem Zettel und dem Menschen daneben. Jede Etappe ist anders, und keine wird zweimal gefahren.",
-    "bergTitle": "Der Sonntag zählt",
-    "bergText": "Allein auf der Strecke, bergauf gegen die Uhr. Am Samstag wird trainiert, am Sonntag gilt es ernst — gewertet wird der schnellste Rennlauf. Es gibt keine nächste Runde, auf der sich ein Fehler noch ausbügeln lässt."
+    "rallyTitle": "Etappe für Etappe",
+    "rallyText": "Auf abgesperrten Strassen gegen die Uhr, auf Asphalt genauso wie auf Schotter. Der Beifahrer sagt jede Kurve an, bevor sie zu sehen ist — man vertraut einem Zettel und dem Menschen daneben. Jede Etappe ist anders, und keine wird zweimal gefahren.",
+    "hillTitle": "Der Sonntag zählt",
+    "hillText": "Allein auf der Strecke, bergauf gegen die Uhr. Am Samstag wird trainiert, am Sonntag gilt es ernst — gewertet wird der schnellste Rennlauf. Es gibt keine nächste Runde, auf der sich ein Fehler noch ausbügeln lässt.",
+    "heroImage": {
+      "src": "img/gravel-dreiviertel.jpg",
+      "w": 1800,
+      "h": 1199,
+      "alt": "Der E30 auf einem Pass"
+    },
+    "image1": {
+      "src": "img/front-pass.jpg",
+      "w": 1800,
+      "h": 1015,
+      "alt": "Front im Detail"
+    },
+    "caption1": "Front nach der Winterrevision",
+    "image2": {
+      "src": "img/dreiviertel-bbs.jpg",
+      "w": 1800,
+      "h": 1011,
+      "alt": "Flanke und Räder"
+    },
+    "caption2": "BBS Kreuzspeichen, M-Technic-Schweller",
+    "image3": {
+      "src": "img/heck-detail.jpg",
+      "w": 1200,
+      "h": 1800,
+      "alt": "Flanke und BBS-Felgen"
+    },
+    "caption3": "Flanke, BBS-Kreuzspeichen"
   },
-  "saison": {
-    "lede": "Jeder Start, über alle Disziplinen, mit Zeiten wo vorhanden. Die erste Saison steht noch bevor.",
+  "season": {
+    "intro": "Jeder Start, über alle Disziplinen, mit Zeiten wo vorhanden. Die erste Saison steht noch bevor.",
     "statStarts": "—",
-    "statPodeste": "—",
-    "statSiege": "—",
-    "wegLede": "Vom Simulator auf die echte Strecke — und von dort in den eigenen Rennwagen."
+    "statPodiums": "—",
+    "statWins": "—",
+    "historyIntro": "Vom Simulator auf die echte Strecke — und von dort in den eigenen Rennwagen."
   },
   "partner": {
     "heroTitle": "Ihr Name auf einem Auto, vor dem die Leute stehen bleiben",
     "heroText": "Ein weisser E30 von 1990 fällt im Fahrerlager auf: Vor ihm bleiben die Leute stehen, am modernen Kleinwagen daneben gehen sie vorbei. Und weil Bergrennen und Rallye gefahren werden, steht Ihr Logo über die ganze Saison verteilt draussen — nicht nur an ein paar Wochenenden.",
-    "kpiRenntage": "—",
-    "kpiDisziplinen": "—",
+    "kpiRaceDays": "—",
+    "kpiDisciplines": "—",
     "kpiInstagram": "—",
     "kpiReels": "—",
-    "kpiPresse": "—",
+    "kpiPress": "—",
     "pkgTitle": "Wie eine Partnerschaft aussehen kann",
-    "pkgLede": "Die folgenden Pakete sind ein Vorschlag, kein Katalog. Fläche, Umfang und Gegenleistung legen wir gemeinsam fest — für eine ganze Saison, eine einzelne Disziplin oder ein einzelnes Rennen.",
+    "pkgIntro": "Die folgenden Pakete sind ein Vorschlag, kein Katalog. Fläche, Umfang und Gegenleistung legen wir gemeinsam fest — für eine ganze Saison, eine einzelne Disziplin oder ein einzelnes Rennen.",
     "pkgNote": "Sie sind unsicher, was passt? Schreiben Sie kurz, was Ihr Betrieb macht — wir schlagen etwas vor, das zu Ihnen passt, und nicht umgekehrt.",
-    "currentLede": "Diese Partner unterstützen die Saison."
+    "currentIntro": "Diese Partner unterstützen die Saison.",
+    "heroImage": {
+      "src": "img/dreiviertel-bbs.jpg",
+      "w": 1800,
+      "h": 1011,
+      "alt": "Der E30"
+    }
   },
-  "galerie": {
-    "lede": "Das Auto, die Werkstatt und später das Fahrerlager. Partner dürfen alles hier weiterverwenden — bitte den Fotografen nennen."
+  "galleryPage": {
+    "intro": "Das Auto, die Werkstatt und später das Fahrerlager. Partner dürfen alles hier weiterverwenden — bitte den Fotografen nennen."
   },
   "journal": {
-    "lede": "Berichte von Renntagen, Notizen aus dem Umbau und was zwischen zwei Einsätzen am Auto passiert."
+    "intro": "Berichte von Renntagen, Notizen aus dem Umbau und was zwischen zwei Einsätzen am Auto passiert."
   },
-  "kontakt": {
-    "lede": "Formular ausfüllen, und die vollständigen Unterlagen kommen per Mail — mit Antwort innert zwei Tagen.",
+  "contact": {
+    "intro": "Formular ausfüllen, und die vollständigen Unterlagen kommen per Mail — mit Antwort innert zwei Tagen.",
     "asideText": "Ansprechperson für Partneranfragen, Verträge und Termine ist Karin Berdi.",
     "mail": "nick@berdi-racing.com",
-    "tel": "+41 00 000 00 00",
-    "ort": "Thurgau, Schweiz",
+    "phone": "+41 00 000 00 00",
+    "city": "Thurgau, Schweiz",
     "pdfText": "Die Unterlagen enthalten den Kalender beider Disziplinen, das Budget, Lackierungsentwürfe und eine Übersicht der freien Flächen am Auto."
   },
   "spots": {
-    "lede": "Das Auto ohne Beschriftung. Gold umrandet sind die Flächen, die noch frei sind — grau, was bereits vergeben ist. Massangaben und Vorlagen für die Druckerei gibt es auf Anfrage.",
-    "s1": "frei",
-    "s2": "frei",
-    "s3": "frei",
-    "s4": "frei",
-    "s5": "frei",
-    "t1": "frei",
-    "t2": "frei",
-    "t3": "frei"
+    "intro": "Das Auto ohne Beschriftung. Gold umrandet sind die Flächen, die noch frei sind — grau, was bereits vergeben ist. Massangaben und Vorlagen für die Druckerei gibt es auf Anfrage.",
+    "s1": false,
+    "s2": false,
+    "s3": false,
+    "s4": false,
+    "s5": false,
+    "t1": false,
+    "t2": false,
+    "t3": false
   },
   "timeline": [
     {
@@ -170,35 +234,55 @@ window.SITE_CONTENT = {
   "events": [],
   "gallery": [
     {
-      "src": "img/daemmerung-front.jpg",
-      "alt": "Der E30 in der Dämmerung",
+      "src": {
+        "src": "img/daemmerung-front.jpg",
+        "w": 1200,
+        "h": 1800,
+        "alt": "Der E30 in der Dämmerung"
+      },
       "cap": "Gotthardpass, Abend vor dem Shakedown",
-      "tag": "Das Auto"
+      "tag": "car"
     },
     {
-      "src": "img/tueren-offen.jpg",
-      "alt": "Front mit offenen Türen",
+      "src": {
+        "src": "img/tueren-offen.jpg",
+        "w": 1200,
+        "h": 1800,
+        "alt": "Front mit offenen Türen"
+      },
       "cap": "Front, Winterrevision fertig",
-      "tag": "Aufbau"
+      "tag": "build"
     },
     {
-      "src": "img/nick-auf-haube.jpg",
-      "alt": "Nick vor dem Auto",
+      "src": {
+        "src": "img/nick-auf-haube.jpg",
+        "w": 1200,
+        "h": 1800,
+        "alt": "Nick vor dem Auto"
+      },
       "cap": "Nick und der E30",
-      "tag": "Das Auto"
+      "tag": "car"
     },
     {
-      "src": "img/nick-an-tuer.jpg",
-      "alt": "Nick an der offenen Tür",
+      "src": {
+        "src": "img/nick-an-tuer.jpg",
+        "w": 1199,
+        "h": 1800,
+        "alt": "Nick an der offenen Tür"
+      },
       "cap": "In der Garage, Samstagabend",
-      "tag": "Aufbau"
+      "tag": "build"
     },
     {
-      "src": "img/flanke-himmel.jpg",
-      "alt": "Flanke gegen den Abendhimmel",
+      "src": {
+        "src": "img/flanke-himmel.jpg",
+        "w": 1200,
+        "h": 1800,
+        "alt": "Flanke gegen den Abendhimmel"
+      },
       "cap": "Flanke gegen den Abendhimmel",
-      "tag": "Das Auto",
-      "tief": true
+      "tag": "car",
+      "lowCrop": true
     }
   ],
   "posts": []

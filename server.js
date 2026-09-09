@@ -1,14 +1,19 @@
 #!/usr/bin/env node
-/* berdi-racing.com — kleiner Server fuer den Admin-Bereich.
-   Ohne Abhaengigkeiten, nur Node-Bordmittel.
+/* berdi-racing.com — small server for the admin area.
+   No dependencies, only what Node brings itself.
 
-   Starten:          node server.js
-   Passwort setzen:  node server.js --set-password nick "langes-passwort"
-   Benutzer loeschen: node server.js --remove-user nick
+   Start:           node server.js
+   Set password:    node server.js --set-password nick "long-password"
+   Remove user:     node server.js --remove-user nick
 
-   Der Server liefert die Website aus und nimmt unter /api/* die Anmeldung
-   und das Speichern von data/content.js entgegen. Ohne ihn bleibt die Seite
-   eine ganz normale statische Website. */
+   The server delivers the website and, under /api/*, accepts the login and the
+   saving of data/content.js. Without it the site stays a perfectly ordinary
+   static website.
+
+   Language: code, comments and log output are English. The only German strings
+   in this file are the answers of /api/contact and the static 404 page, because
+   those are read by a visitor of the German website. Everything the admin area
+   sees — sign-in, content, uploads, enquiries — answers in English. */
 
 "use strict";
 
@@ -21,12 +26,14 @@ const ROOT = __dirname;
 const USERS_FILE = path.join(ROOT, "data", "admin-users.json");
 const CONTENT_FILE = path.join(ROOT, "data", "content.js");
 const BACKUP_DIR = path.join(ROOT, "data", "backups");
-const ANFRAGEN_FILE = path.join(ROOT, "data", "anfragen.json");
+const INQUIRIES_FILE = path.join(ROOT, "data", "inquiries.json");
+const READ_FILE = path.join(ROOT, "data", "inquiries-read.json");
+const UPLOAD_DIR = path.join(ROOT, "data", "uploads");
 const PORT = Number(process.env.PORT) || 4000;
 const HOST = process.env.HOST || "127.0.0.1";
 const SESSION_MS = 8 * 60 * 60 * 1000;
 
-/* ------------------------------ Benutzer -------------------------------- */
+/* ------------------------------ Users ----------------------------------- */
 function readUsers() {
   try { return JSON.parse(fs.readFileSync(USERS_FILE, "utf8")); }
   catch { return {}; }
@@ -39,17 +46,17 @@ function hash(pass, salt) {
   return crypto.scryptSync(pass, salt, 64).toString("hex");
 }
 function setPassword(user, pass) {
-  if (!user || !pass) { console.error("Aufruf: node server.js --set-password <benutzer> <passwort>"); process.exit(1); }
-  if (pass.length < 8) { console.error("Passwort muss mindestens 8 Zeichen haben."); process.exit(1); }
+  if (!user || !pass) { console.error("Usage: node server.js --set-password <user> <password>"); process.exit(1); }
+  if (pass.length < 8) { console.error("Password must be at least 8 characters."); process.exit(1); }
   const users = readUsers();
   const salt = crypto.randomBytes(16).toString("hex");
   users[user] = { salt, hash: hash(pass, salt) };
   writeUsers(users);
-  console.log(`Passwort für "${user}" gesetzt (${USERS_FILE}).`);
+  console.log(`Password for "${user}" set (${USERS_FILE}).`);
 }
 function checkPassword(user, pass) {
   const rec = readUsers()[user];
-  /* Auch ohne Treffer rechnen, damit die Antwortzeit nichts verraet. */
+  /* Compute even without a match, so the response time gives nothing away. */
   const salt = rec ? rec.salt : "0".repeat(32);
   const got = Buffer.from(hash(pass || "", salt), "hex");
   const want = Buffer.from(rec ? rec.hash : hash("", salt), "hex");
@@ -57,7 +64,7 @@ function checkPassword(user, pass) {
   return !!rec && equal;
 }
 
-/* ------------------------------ Sitzungen ------------------------------- */
+/* ------------------------------ Sessions -------------------------------- */
 const sessions = new Map();
 function newSession(user) {
   const token = crypto.randomBytes(24).toString("base64url");
@@ -73,104 +80,371 @@ function sessionOf(req) {
   if (s.until < Date.now()) { sessions.delete(m[1]); return null; }
   return { token: m[1], user: s.user };
 }
-setInterval(() => {
-  const now = Date.now();
-  for (const [t, s] of sessions) if (s.until < now) sessions.delete(t);
-}, 15 * 60 * 1000).unref();
-
-/* --------------------------- Fehlversuche bremsen ----------------------- */
+/* --------------------------- Slow down failed logins -------------------- */
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_TRIES = 8;
 const attempts = new Map();
 function tooManyAttempts(ip) {
   const a = attempts.get(ip);
   if (!a) return false;
-  if (Date.now() - a.first > 15 * 60 * 1000) { attempts.delete(ip); return false; }
-  return a.n >= 8;
+  if (Date.now() - a.first > LOGIN_WINDOW_MS) { attempts.delete(ip); return false; }
+  return a.n >= LOGIN_MAX_TRIES;
 }
 function noteFailure(ip) {
   const a = attempts.get(ip);
-  if (!a || Date.now() - a.first > 15 * 60 * 1000) attempts.set(ip, { n: 1, first: Date.now() });
+  if (!a || Date.now() - a.first > LOGIN_WINDOW_MS) attempts.set(ip, { n: 1, first: Date.now() });
   else a.n += 1;
 }
-/* Hinter Caddy und dem Cloudflare Tunnel ist die Gegenstelle immer 127.0.0.1 —
-   ohne diesen Umweg zaehlten alle Besucher als eine einzige Adresse, und acht
-   Fehlversuche von irgendwem sperrten den Admin fuer alle.
-   CF-Connecting-IP setzt Cloudflare selbst und laesst sich vom Besucher nicht
-   faelschen; X-Forwarded-For ist der Rueckfall fuer den Betrieb ohne Cloudflare.
-   Beides ist nur vertrauenswuerdig, weil dieser Server ausschliesslich auf
-   127.0.0.1 lauscht und damit nur der eigene Reverse Proxy ihn erreicht. */
+/* Behind Caddy and the Cloudflare tunnel the peer address is always 127.0.0.1.
+   Without looking at the forwarded headers every visitor would count as one
+   single address, and eight failed attempts by anyone would lock out the admin
+   for everybody.
+
+   CF-Connecting-IP is set by Cloudflare itself and cannot be forged by the
+   visitor. X-Forwarded-For is the fallback for running without Cloudflare.
+   Both are only trustworthy because this server listens on 127.0.0.1 alone, so
+   nothing but our own reverse proxy can reach it.
+
+   Read X-Forwarded-For from the RIGHT. Caddy appends the peer it actually saw
+   to whatever chain arrived, so the rightmost entry is the only one we put
+   there ourselves — every entry left of it was supplied by the client. Reading
+   the leftmost entry instead made the login lockout useless: rotating the
+   header through fake addresses gave unlimited password attempts, because each
+   forged value looked like a brand-new visitor.
+
+   Which entry is authoritative depends on the setup:
+     - Behind the Cloudflare tunnel, CF-Connecting-IP decides and the chain is
+       never consulted. The rightmost X-Forwarded-For entry would be 127.0.0.1
+       there anyway, because Caddy only ever sees cloudflared.
+     - With Caddy exposed directly (operation without Cloudflare), Caddy
+       appends the real visitor, so the rightmost entry is that visitor.
+     - Talking to this server directly, the header is simply whatever the
+       caller sent. That is acceptable because it listens on 127.0.0.1 only,
+       so reaching it at all means already being on the machine. */
 function clientIp(req) {
   const cf = req.headers["cf-connecting-ip"];
   if (cf) return String(cf).trim();
   const xff = req.headers["x-forwarded-for"];
-  if (xff) return String(xff).split(",")[0].trim();
+  if (xff) {
+    const chain = String(xff).split(",");
+    return chain[chain.length - 1].trim();
+  }
   return req.socket.remoteAddress || "?";
 }
 
-/* --------------------------- Anfragen entgegennehmen -------------------- */
-/* Getrennt vom Login-Zähler: ein Formular-Spammer soll den Admin nicht
-   aussperren, und ein Passwort-Rater nicht das Formular blockieren. */
-const kontaktRate = new Map();
-function kontaktZuOft(ip) {
-  const a = kontaktRate.get(ip);
+/* --------------------------- Receiving enquiries ------------------------ */
+/* Kept separate from the login counter: someone spamming the form should not
+   lock the admin out, and someone guessing passwords should not block the
+   form. */
+const CONTACT_WINDOW_MS = 60 * 60 * 1000;
+const CONTACT_MAX_TRIES = 5;
+const contactRate = new Map();
+function contactTooOften(ip) {
+  const a = contactRate.get(ip);
   if (!a) return false;
-  if (Date.now() - a.first > 60 * 60 * 1000) { kontaktRate.delete(ip); return false; }
-  return a.n >= 5;
+  if (Date.now() - a.first > CONTACT_WINDOW_MS) { contactRate.delete(ip); return false; }
+  return a.n >= CONTACT_MAX_TRIES;
 }
-function notiereKontakt(ip) {
-  const a = kontaktRate.get(ip);
-  if (!a || Date.now() - a.first > 60 * 60 * 1000) kontaktRate.set(ip, { n: 1, first: Date.now() });
+function noteContact(ip) {
+  const a = contactRate.get(ip);
+  if (!a || Date.now() - a.first > CONTACT_WINDOW_MS) contactRate.set(ip, { n: 1, first: Date.now() });
   else a.n += 1;
 }
 
-/* Nur diese Felder werden übernommen. Als Liste des Erlaubten formuliert,
-   damit ein Bot nicht beliebige Schlüssel in die Datei schreiben kann. */
-const KONTAKT_FELDER = ["name", "firma", "email", "telefon", "nachricht", "betreff"];
-const KONTAKT_MAX = 2000;
+/* --------------------------- Housekeeping ------------------------------- */
+/* All three maps are keyed by client address, so they grow with every distinct
+   visitor. Sessions were swept already; the two rate-limit maps were not — an
+   entry there only disappeared if that same address came back, so a caller
+   walking through addresses could grow them without limit until the Pi ran out
+   of memory. One timer sweeps all three, using the same windows the checks
+   above apply, so nothing is dropped while it still counts. */
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, s] of sessions) if (s.until < now) sessions.delete(token);
+  for (const [ip, a] of attempts) if (now - a.first > LOGIN_WINDOW_MS) attempts.delete(ip);
+  for (const [ip, a] of contactRate) if (now - a.first > CONTACT_WINDOW_MS) contactRate.delete(ip);
+}, 15 * 60 * 1000).unref();
 
-function anfragenLesen() {
-  try { return JSON.parse(fs.readFileSync(ANFRAGEN_FILE, "utf8")); }
+/* Only these fields are taken over. Written as a list of what is allowed, so a
+   bot cannot write arbitrary keys into the file. The names match the name=
+   attributes of the form in kontakt.html. */
+const CONTACT_FIELDS = ["name", "company", "email", "phone", "message", "subject"];
+const CONTACT_MAX = 2000;
+
+function readInquiries() {
+  try { return JSON.parse(fs.readFileSync(INQUIRIES_FILE, "utf8")); }
   catch { return []; }
 }
-function anfrageSpeichern(eintrag) {
-  fs.mkdirSync(path.dirname(ANFRAGEN_FILE), { recursive: true });
-  const alle = anfragenLesen();
-  alle.push(eintrag);
-  const tmp = ANFRAGEN_FILE + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(alle, null, 2) + "\n", { mode: 0o600 });
-  fs.renameSync(tmp, ANFRAGEN_FILE);   /* atomar, wie bei content.js */
+function saveInquiry(entry) {
+  fs.mkdirSync(path.dirname(INQUIRIES_FILE), { recursive: true });
+  const all = readInquiries();
+  all.push(entry);
+  const tmp = INQUIRIES_FILE + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(all, null, 2) + "\n", { mode: 0o600 });
+  fs.renameSync(tmp, INQUIRIES_FILE);   /* atomic, same as for content.js */
 }
 
-/* ------------------------------ Hilfsmittel ----------------------------- */
+/* Which enquiries have been looked at. Kept in its own file so inquiries.json
+   stays append-only — an enquiry is never rewritten after it arrived. */
+function readSeen() {
+  try {
+    const v = JSON.parse(fs.readFileSync(READ_FILE, "utf8"));
+    return Array.isArray(v) ? v : [];
+  } catch { return []; }
+}
+function writeSeen(ids) {
+  fs.mkdirSync(path.dirname(READ_FILE), { recursive: true });
+  const tmp = READ_FILE + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(ids, null, 2) + "\n", { mode: 0o600 });
+  fs.renameSync(tmp, READ_FILE);
+}
+
+/* --------------------------- Notification by mail ----------------------- */
+/* The Pi cannot send mail itself — a residential address has no reputation and
+   the message would land in spam or be refused outright. So it goes through a
+   sending service. Without the environment variables nothing is sent and
+   nothing breaks; a fresh clone and local development behave as before.
+
+     RESEND_API_KEY   API key of the service
+     MAIL_TO          who gets the notification
+     MAIL_FROM        sender, must be on a domain verified at Resend
+
+   Deliberately fire and forget: the visitor already has their confirmation
+   before this runs. A contact form must never fail because a third party is
+   down. */
+const https = require("https");
+
+function notifyByMail(entry) {
+  const key = process.env.RESEND_API_KEY;
+  const to = process.env.MAIL_TO;
+  const from = process.env.MAIL_FROM;
+  if (!key || !to || !from) return;
+
+  /* English, like the rest of the admin side: this mail goes to whoever runs
+     the site, not to a visitor. The enquiry text inside it is of course
+     whatever the sender wrote. */
+  const lines = [
+    `Name:     ${entry.name || "—"}`,
+    `Company:  ${entry.company || "—"}`,
+    `E-mail:   ${entry.email}`,
+    `Phone:    ${entry.phone || "—"}`,
+    `Subject:  ${entry.subject || "—"}`,
+    "",
+    entry.message || "(no message)",
+    "",
+    `Received: ${entry.received}`,
+    "In the admin area under “Enquiries”."
+  ].join("\n");
+
+  const body = JSON.stringify({
+    from,
+    to: [to],
+    reply_to: entry.email,
+    subject: `New enquiry from ${entry.name || entry.email}`,
+    text: lines
+  });
+
+  const req = https.request({
+    hostname: "api.resend.com",
+    path: "/emails",
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${key}`,
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(body)
+    },
+    timeout: 5000
+  }, res => {
+    res.resume();          /* drain, we only care about the status */
+    if (res.statusCode >= 300) {
+      console.error(`[mail] Resend answered ${res.statusCode}`);
+    }
+  });
+  req.on("timeout", () => req.destroy(new Error("timeout")));
+  req.on("error", err => console.error("[mail] not sent:", err.message));
+  req.end(body);
+}
+
+/* ------------------------------ Uploads --------------------------------- */
+/* Images live in data/uploads/, because data/ is the only directory the
+   systemd unit may write to (ReadWritePaths). They are served under /media/,
+   which keeps the simple rule "nothing below /data/ is public except
+   content.js" intact and gives a clean path for the Cloudflare cache rule.
+
+   The browser scales and converts to WebP before uploading (js/upload.js), so
+   there is no image library on the Pi and no CPU work per upload. The server
+   only checks that what arrives really is a WebP file. */
+const UPLOAD_MAX_BYTES = 3 * 1024 * 1024;
+const UPLOAD_DIR_MAX_BYTES = 300 * 1024 * 1024;
+const UPLOAD_WINDOW_MS = 60 * 60 * 1000;
+const UPLOAD_MAX_PER_WINDOW = 60;
+const NAME_RE = /^[a-f0-9]{16}(-480)?\.webp$/;
+const ID_RE = /^[a-f0-9]{16}$/;
+
+const uploadRate = new Map();
+function uploadTooOften(user) {
+  const a = uploadRate.get(user);
+  if (!a) return false;
+  if (Date.now() - a.first > UPLOAD_WINDOW_MS) { uploadRate.delete(user); return false; }
+  return a.n >= UPLOAD_MAX_PER_WINDOW;
+}
+function noteUpload(user) {
+  const a = uploadRate.get(user);
+  if (!a || Date.now() - a.first > UPLOAD_WINDOW_MS) uploadRate.set(user, { n: 1, first: Date.now() });
+  else a.n += 1;
+}
+
+/* A WebP file starts with "RIFF", then four bytes of length, then "WEBP".
+   Checked instead of trusting Content-Type, which the caller picks freely. */
+function isWebp(buf) {
+  return buf.length > 12 &&
+    buf.toString("latin1", 0, 4) === "RIFF" &&
+    buf.toString("latin1", 8, 12) === "WEBP";
+}
+
+function uploadFiles() {
+  try { return fs.readdirSync(UPLOAD_DIR).filter(f => NAME_RE.test(f)); }
+  catch { return []; }
+}
+function uploadDirBytes() {
+  return uploadFiles().reduce((sum, f) => {
+    try { return sum + fs.statSync(path.join(UPLOAD_DIR, f)).size; }
+    catch { return sum; }
+  }, 0);
+}
+/* One entry per image, the -480 variant folded in as its thumbnail. Width and
+   height are not stored here — the admin area reads them off the image itself
+   when it is picked, which keeps this endpoint free of a second index that
+   could fall out of step with the directory. */
+function uploadList() {
+  const files = uploadFiles();
+  return files.filter(f => !f.includes("-480")).map(f => {
+    const id = f.slice(0, 16);
+    const thumbName = `${id}-480.webp`;
+    let bytes = 0, mtime = 0;
+    try {
+      const st = fs.statSync(path.join(UPLOAD_DIR, f));
+      bytes = st.size; mtime = st.mtimeMs;
+    } catch { /* disappeared between listing and stat */ }
+    return {
+      id,
+      src: `/media/${f}`,
+      thumb: files.includes(thumbName) ? `/media/${thumbName}` : `/media/${f}`,
+      bytes,
+      mtime
+    };
+  }).sort((a, b) => b.mtime - a.mtime);
+}
+
+/* Which content fields point at an upload. Used before deleting, so nobody
+   silently removes a picture that is still on a page. */
+function uploadUsedIn(id) {
+  let content;
+  try { content = loadContent(); } catch { return []; }
+  const places = [];
+  (function walk(node, trail) {
+    if (Array.isArray(node)) return node.forEach((v, i) => walk(v, `${trail}[${i + 1}]`));
+    if (node && typeof node === "object") {
+      return Object.keys(node).forEach(k => walk(node[k], trail ? `${trail}.${k}` : k));
+    }
+    if (typeof node === "string" && node.includes(id)) places.push(trail);
+  })(content, "");
+  return places;
+}
+
+/* ------------------------------ Helpers --------------------------------- */
+/* Doubles as the allow-list of what may be served at all: isBlocked() rejects
+   any extension that is not a key here. Deliberately no ".json" — nothing on
+   the site fetches JSON (the content is a .js file, uploads are images, the
+   enquiries are only reachable through the API), and leaving it in meant
+   events-schema.json was downloadable by anyone. Formulated as an allow-list so
+   a file dropped into the project root later is not public by accident.
+   ".pdf" and ".zip" stay for the planned Unterlagen and Medienpaket. */
 const TYPES = {
   ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
   ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
   ".svg": "image/svg+xml", ".webp": "image/webp", ".ico": "image/x-icon",
   ".woff2": "font/woff2", ".pdf": "application/pdf", ".zip": "application/zip"
 };
+
+/* Set on every response, not only in the Caddyfile: this way the local server
+   behaves like production, and a mistake in the proxy configuration cannot
+   silently drop them. Strict-Transport-Security is the one exception — it
+   belongs at the TLS edge and stays in Caddy.
+
+   style-src needs 'unsafe-inline' because the pages carry inline style
+   attributes and both js/content.js and js/admin.js assign to .style directly.
+   script-src does not: there is no inline <script> anywhere in the project.
+   blob: is for the image preview in the admin area, which reads a freshly
+   selected file before it is uploaded. */
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob:",
+  "connect-src 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "base-uri 'none'",
+  "object-src 'none'"
+].join("; ");
+const SECURITY_HEADERS = {
+  "Content-Security-Policy": CSP,
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
+};
+function headers(own, extra) {
+  return Object.assign({}, SECURITY_HEADERS, own, extra || {});
+}
+
 function json(res, code, obj, extra) {
   const body = JSON.stringify(obj);
-  res.writeHead(code, Object.assign({
+  res.writeHead(code, headers({
     "Content-Type": "application/json; charset=utf-8",
     "Content-Length": Buffer.byteLength(body),
     "Cache-Control": "no-store"
-  }, extra || {}));
+  }, extra));
   res.end(body);
 }
+/* Rejects with err.tooLarge once the limit is passed, so the caller can answer
+   413 instead of a generic error. Important: do NOT destroy the socket here.
+   Tearing it down before anything was written meant the client saw a connection
+   reset and never the explanation — a visitor writing a long message got
+   "site is broken" instead of "message too long". Draining the rest with
+   resume() throws the remaining bytes away while keeping the connection alive
+   long enough to answer. */
 function readBody(req, limit = 1_000_000) {
   return new Promise((resolve, reject) => {
-    let size = 0; const chunks = [];
+    let size = 0; let over = false; const chunks = [];
     req.on("data", c => {
+      if (over) return;
       size += c.length;
-      if (size > limit) { reject(new Error("zu gross")); req.destroy(); return; }
+      if (size > limit) {
+        over = true;
+        chunks.length = 0;
+        req.resume();
+        const err = new Error("Body over the limit");
+        err.tooLarge = true;
+        reject(err);
+        return;
+      }
       chunks.push(c);
     });
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    req.on("error", reject);
+    req.on("end", () => { if (!over) resolve(Buffer.concat(chunks)); });
+    req.on("error", err => { if (!over) reject(err); });
   });
 }
+/* Most callers want text; uploads want the raw bytes, which is why readBody
+   itself resolves a Buffer. */
+function readText(req, limit) {
+  return readBody(req, limit).then(buf => buf.toString("utf8"));
+}
 
-/* ------------------------------ Inhalt lesen/schreiben ------------------ */
+/* ------------------------------ Reading/writing content ---------------- */
 function loadContent() {
   const src = fs.readFileSync(CONTENT_FILE, "utf8");
   const i = src.indexOf("window.SITE_CONTENT");
@@ -178,67 +452,98 @@ function loadContent() {
   const end = src.lastIndexOf("}");
   return JSON.parse(src.slice(start, end + 1));
 }
+/* Must stay character for character identical to fileText() in js/admin.js and
+   to the header of data/content.js — otherwise the header flips back and forth
+   with every save depending on who wrote the file last. */
+const CONTENT_HEADER =
+  "/* Content of the website — the single source of truth.\n" +
+  "   Written by the admin area (admin.html), never by hand.\n" +
+  "   Deliberately a .js file: that way the site can also be opened by simply\n" +
+  "   double-clicking it, where fetch() would be blocked by CORS. */\n";
+
 function saveContent(obj) {
-  const text =
-    "/* Inhalt der Website — einzige Quelle der Wahrheit.\n" +
-    "   Wird vom Admin-Bereich (admin.html) geschrieben, nicht von Hand.\n" +
-    "   Bewusst eine .js-Datei: so laesst sich die Seite auch ohne Server\n" +
-    "   direkt per Doppelklick oeffnen (fetch() waere hier durch CORS blockiert). */\n" +
-    "window.SITE_CONTENT = " + JSON.stringify(obj, null, 2) + ";\n";
+  const text = CONTENT_HEADER + "window.SITE_CONTENT = " + JSON.stringify(obj, null, 2) + ";\n";
 
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
   if (fs.existsSync(CONTENT_FILE)) {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     fs.copyFileSync(CONTENT_FILE, path.join(BACKUP_DIR, `content-${stamp}.js`));
-    /* Nur die letzten 30 Sicherungen behalten. */
+    /* Keep only the last 30 backups. */
     const old = fs.readdirSync(BACKUP_DIR).filter(f => f.startsWith("content-")).sort();
     old.slice(0, Math.max(0, old.length - 30))
        .forEach(f => fs.unlinkSync(path.join(BACKUP_DIR, f)));
   }
   const tmp = CONTENT_FILE + ".tmp";
   fs.writeFileSync(tmp, text);
-  fs.renameSync(tmp, CONTENT_FILE);   /* atomar: nie eine halb geschriebene Datei */
+  fs.renameSync(tmp, CONTENT_FILE);   /* atomic: never a half-written file */
 }
 
-/* ------------------------------ Statische Dateien ----------------------- */
-/* Nicht ausliefern: Zugangsdaten, Sicherungen, der Server selbst und die
-   Betriebsvorlagen. Aus data/ ist einzig content.js oeffentlich — als Liste
-   des Erlaubten formuliert, damit eine spaeter dazugelegte Datei nicht aus
-   Versehen im Netz steht. */
+/* ------------------------------ Static files ---------------------------- */
+/* Never delivered: credentials, backups, the server itself and the deployment
+   templates. Out of data/ only content.js is public — written as a list of what
+   is allowed, so a file added there later is not on the net by accident. */
 function isBlocked(urlPath) {
   if (urlPath === "/server.js" || urlPath.startsWith("/deploy/")) return true;
   if (urlPath.startsWith("/data/") && urlPath !== "/data/content.js") return true;
-  return path.basename(urlPath).startsWith(".");
+  if (path.basename(urlPath).startsWith(".")) return true;
+  /* Only known file types. Without this, README.md was downloadable and handed
+     out the whole deployment: the admin URL, the path on the Pi, which
+     endpoints are deliberately open, and that data/admin-users.json exists. */
+  return !Object.prototype.hasOwnProperty.call(TYPES, path.extname(urlPath).toLowerCase());
 }
 function serveStatic(req, res) {
   let urlPath;
-  /* Ein kaputtes Prozentzeichen (/%zz) wirft hier — unbehandelt beendet das
-     den ganzen Prozess, eine einzige Anfrage legte die Seite lahm. */
+  /* A broken percent sign (/%zz) throws here — left unhandled it ends the
+     whole process, so a single request took the site down. */
   try { urlPath = decodeURIComponent((req.url.split("?")[0]) || "/"); }
-  catch { res.writeHead(400); res.end("Bad request"); return; }
+  catch { res.writeHead(400, headers({})); res.end("Bad request"); return; }
 
-  /* Zuerst normalisieren, dann sperren. Andersherum laeuft ein Pfad wie
-     /data/../data/admin-users.json an der Sperre vorbei, weil sie das rohe
-     ".." noch sieht und path.join es erst danach aufloest. */
+  /* Normalise first, then block. The other way round a path like
+     /data/../data/admin-users.json slips past the block, because it still sees
+     the raw ".." and path.join only resolves it afterwards. */
   urlPath = path.posix.normalize(urlPath);
-  if (!urlPath.startsWith("/")) { res.writeHead(403); res.end("Forbidden"); return; }
+  if (!urlPath.startsWith("/")) { res.writeHead(403, headers({})); res.end("Forbidden"); return; }
   if (urlPath.endsWith("/")) urlPath += "index.html";
-  if (isBlocked(urlPath)) { res.writeHead(404); res.end("Not found"); return; }
+
+  /* Uploaded images. The name is checked against NAME_RE before a path is
+     built from it, so only files this server generated itself can be
+     addressed — no directory part of the URL ever reaches the filesystem. */
+  if (urlPath.startsWith("/media/")) {
+    const name = urlPath.slice("/media/".length);
+    if (!NAME_RE.test(name)) { res.writeHead(404, headers({})); res.end("Not found"); return; }
+    return sendFile(res, path.join(UPLOAD_DIR, name));
+  }
+
+  if (isBlocked(urlPath)) { res.writeHead(404, headers({})); res.end("Not found"); return; }
 
   const file = path.join(ROOT, urlPath);
-  if (!file.startsWith(ROOT + path.sep)) { res.writeHead(403); res.end("Forbidden"); return; }
+  if (!file.startsWith(ROOT + path.sep)) { res.writeHead(403, headers({})); res.end("Forbidden"); return; }
 
+  sendFile(res, file);
+}
+
+function sendFile(res, file) {
   fs.stat(file, (err, st) => {
-    if (err || !st.isFile()) { res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
-      res.end("<h1>404</h1><p>Seite nicht gefunden.</p>"); return; }
+    if (err || !st.isFile()) {
+      res.writeHead(404, headers({ "Content-Type": "text/html; charset=utf-8" }));
+      res.end("<h1>404</h1><p>Seite nicht gefunden.</p>"); return;
+    }
     const type = TYPES[path.extname(file).toLowerCase()] || "application/octet-stream";
     const isContent = file === CONTENT_FILE;
-    res.writeHead(200, {
+    /* An uploaded image never changes — its name is derived from random bytes
+       at upload time, and a replacement gets a new name. So it can be cached
+       for a long time and immutably. */
+    const isUpload = file.startsWith(UPLOAD_DIR + path.sep);
+    let cache;
+    if (isContent || type.startsWith("text/html")) cache = "no-cache";
+    else if (isUpload) cache = "public, max-age=31536000, immutable";
+    else cache = "public, max-age=3600";
+
+    res.writeHead(200, headers({
       "Content-Type": type,
       "Content-Length": st.size,
-      /* content.js darf nie aus dem Cache kommen, sonst sieht man alte Texte. */
-      "Cache-Control": isContent || type.startsWith("text/html") ? "no-cache" : "public, max-age=3600"
-    });
+      "Cache-Control": cache
+    }));
     fs.createReadStream(file).pipe(res);
   });
 }
@@ -258,11 +563,11 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url === "/api/login" && req.method === "POST") {
-      if (tooManyAttempts(ip)) return json(res, 429, { error: "Zu viele Versuche. Bitte später erneut." });
-      const { user, pass } = JSON.parse(await readBody(req, 4096) || "{}");
+      if (tooManyAttempts(ip)) return json(res, 429, { error: "Too many attempts. Please try again later." });
+      const { user, pass } = JSON.parse(await readText(req, 4096) || "{}");
       if (!checkPassword(user, pass)) {
         noteFailure(ip);
-        return json(res, 401, { error: "Benutzername oder Passwort stimmt nicht." });
+        return json(res, 401, { error: "User name or password is not correct." });
       }
       attempts.delete(ip);
       const token = newSession(user);
@@ -277,83 +582,191 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { ok: true }, { "Set-Cookie": "nb_sess=; HttpOnly; Path=/; Max-Age=0" });
     }
 
-    if (url === "/api/kontakt" && req.method === "POST") {
-      if (kontaktZuOft(ip)) {
+    if (url === "/api/contact" && req.method === "POST") {
+      if (contactTooOften(ip)) {
         return json(res, 429, { error: "Zu viele Anfragen. Bitte später erneut." });
       }
 
       let data;
-      try { data = JSON.parse(await readBody(req, 32768) || "{}"); }
-      catch { return json(res, 400, { error: "Anfrage konnte nicht gelesen werden." }); }
+      try { data = JSON.parse(await readText(req, 32768) || "{}"); }
+      catch (e) {
+        /* A body over the limit is something other than broken JSON and has to
+           reach the outer catch, so the answer is 413. */
+        if (e && e.tooLarge) throw e;
+        return json(res, 400, { error: "Anfrage konnte nicht gelesen werden." });
+      }
 
-      /* Honigtopf: ein für Menschen unsichtbares Feld. Bots füllen alles aus.
-         Wir antworten mit ok, damit der Bot es nicht erneut versucht. */
+      /* Honeypot: a field invisible to people. Bots fill in everything. We
+         answer ok so the bot does not try again. */
       if (typeof data.website === "string" && data.website.trim()) {
         return json(res, 200, { ok: true });
       }
 
-      const sauber = {};
-      for (const feld of KONTAKT_FELDER) {
-        const v = data[feld];
-        if (typeof v === "string" && v.trim()) sauber[feld] = v.trim().slice(0, KONTAKT_MAX);
+      const clean = {};
+      for (const fieldName of CONTACT_FIELDS) {
+        const v = data[fieldName];
+        if (typeof v === "string" && v.trim()) clean[fieldName] = v.trim().slice(0, CONTACT_MAX);
       }
 
-      if (!sauber.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(sauber.email)) {
+      if (!clean.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clean.email)) {
         return json(res, 400, { error: "Bitte eine gültige E-Mail-Adresse angeben." });
       }
-      if (!sauber.nachricht && !sauber.name) {
+      if (!clean.message && !clean.name) {
         return json(res, 400, { error: "Bitte Name oder Nachricht ausfüllen." });
       }
 
-      anfrageSpeichern({
+      const entry = {
         id: crypto.randomBytes(8).toString("hex"),
-        eingang: new Date().toISOString(),
+        received: new Date().toISOString(),
         ip,
-        ...sauber
-      });
-      notiereKontakt(ip);
-      console.log(`[${new Date().toISOString()}] Neue Anfrage von ${sauber.email}`);
-      return json(res, 200, { ok: true });
+        ...clean
+      };
+      saveInquiry(entry);
+      noteContact(ip);
+      console.log(`[${new Date().toISOString()}] New enquiry from ${clean.email}`);
+
+      /* Answer first, notify afterwards. The enquiry is safely on disk at this
+         point, so a mail service that is slow or down can no longer affect
+         what the visitor sees. */
+      json(res, 200, { ok: true });
+      try { notifyByMail(entry); }
+      catch (err) { console.error("[mail] not sent:", err.message); }
+      return;
     }
 
-    if (url === "/api/anfragen" && req.method === "GET") {
-      if (!sess) return json(res, 401, { error: "Nicht angemeldet." });
-      return json(res, 200, anfragenLesen().slice().reverse());
+    if (url === "/api/upload" && req.method === "POST") {
+      if (!sess) return json(res, 401, { error: "Not signed in." });
+      if (uploadTooOften(sess.user)) {
+        return json(res, 429, { error: "Too many uploads. Please try again later." });
+      }
+
+      const q = new URL(req.url, "http://x").searchParams;
+      const variant = q.get("variant") === "thumb" ? "thumb" : "main";
+
+      /* The thumbnail belongs to an image uploaded a moment ago, so its id is
+         given; the main image gets a fresh one. The client's file name is
+         never used — it would be the one place an attacker could steer where
+         we write. */
+      let id;
+      if (variant === "thumb") {
+        id = q.get("id") || "";
+        if (!ID_RE.test(id)) return json(res, 400, { error: "Invalid image id." });
+        if (!fs.existsSync(path.join(UPLOAD_DIR, `${id}.webp`))) {
+          return json(res, 400, { error: "The main image for this thumbnail is missing." });
+        }
+      } else {
+        id = crypto.randomBytes(8).toString("hex");
+      }
+
+      if (uploadDirBytes() > UPLOAD_DIR_MAX_BYTES) {
+        return json(res, 507, { error: "The image store is full. Please delete old images." });
+      }
+
+      const buf = await readBody(req, UPLOAD_MAX_BYTES);
+      if (!isWebp(buf)) {
+        return json(res, 415, { error: "WebP images only. The upload normally converts by itself." });
+      }
+
+      fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+      const name = variant === "thumb" ? `${id}-480.webp` : `${id}.webp`;
+      const dest = path.join(UPLOAD_DIR, name);
+      const tmp = dest + ".tmp";
+      fs.writeFileSync(tmp, buf);
+      fs.renameSync(tmp, dest);      /* atomic, as everywhere else */
+      noteUpload(sess.user);
+
+      console.log(`[${new Date().toISOString()}] ${sess.user} uploaded ${name} (${buf.length} bytes)`);
+      return json(res, 200, { id, name, src: `/media/${name}`, bytes: buf.length });
+    }
+
+    if (url === "/api/uploads" && req.method === "GET") {
+      if (!sess) return json(res, 401, { error: "Not signed in." });
+      return json(res, 200, {
+        items: uploadList(),
+        bytes: uploadDirBytes(),
+        maxBytes: UPLOAD_DIR_MAX_BYTES
+      });
+    }
+
+    if (url.startsWith("/api/uploads/") && req.method === "DELETE") {
+      if (!sess) return json(res, 401, { error: "Not signed in." });
+      const id = url.slice("/api/uploads/".length);
+      if (!ID_RE.test(id)) return json(res, 400, { error: "Invalid image id." });
+
+      /* Only refuse when the caller has not been warned yet: the admin area
+         asks once and then repeats the request with ?force=1. */
+      const force = new URL(req.url, "http://x").searchParams.get("force") === "1";
+      const places = uploadUsedIn(id);
+      if (places.length && !force) {
+        return json(res, 409, { inUse: true, places });
+      }
+
+      let removed = 0;
+      for (const name of [`${id}.webp`, `${id}-480.webp`]) {
+        try { fs.unlinkSync(path.join(UPLOAD_DIR, name)); removed++; }
+        catch { /* was not there, nothing to do */ }
+      }
+      if (!removed) return json(res, 404, { error: "Image not found." });
+      console.log(`[${new Date().toISOString()}] ${sess.user} deleted image ${id}`);
+      return json(res, 200, { ok: true, places });
+    }
+
+    if (url === "/api/inquiries/read" && req.method === "POST") {
+      if (!sess) return json(res, 401, { error: "Not signed in." });
+      const body = JSON.parse(await readText(req, 65536) || "{}");
+      const ids = Array.isArray(body.ids) ? body.ids.filter(x => typeof x === "string") : [];
+      /* Only ids that actually exist, so the file cannot be filled with
+         arbitrary content. */
+      const known = new Set(readInquiries().map(e => e.id));
+      const merged = [...new Set([...readSeen(), ...ids.filter(x => known.has(x))])];
+      writeSeen(merged);
+      return json(res, 200, { read: merged.length });
+    }
+
+    if (url === "/api/inquiries" && req.method === "GET") {
+      if (!sess) return json(res, 401, { error: "Not signed in." });
+      const seen = new Set(readSeen());
+      const items = readInquiries().slice().reverse()
+        .map(e => Object.assign({}, e, { seen: seen.has(e.id) }));
+      return json(res, 200, { items, unread: items.filter(e => !e.seen).length });
     }
 
     if (url === "/api/content" && req.method === "GET") {
-      if (!sess) return json(res, 401, { error: "Nicht angemeldet." });
+      if (!sess) return json(res, 401, { error: "Not signed in." });
       return json(res, 200, loadContent());
     }
 
     if (url === "/api/content" && req.method === "POST") {
-      if (!sess) return json(res, 401, { error: "Nicht angemeldet." });
-      const obj = JSON.parse(await readBody(req));
+      if (!sess) return json(res, 401, { error: "Not signed in." });
+      const obj = JSON.parse(await readText(req));
       if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
-        return json(res, 400, { error: "Ungültiger Inhalt." });
+        return json(res, 400, { error: "Invalid content." });
       }
       saveContent(obj);
-      console.log(`[${new Date().toISOString()}] ${sess.user} hat content.js gespeichert`);
+      console.log(`[${new Date().toISOString()}] ${sess.user} saved content.js`);
       return json(res, 200, { ok: true });
     }
 
-    return json(res, 404, { error: "Unbekannter Endpunkt." });
+    return json(res, 404, { error: "Unknown endpoint." });
   } catch (e) {
+    if (e && e.tooLarge) {
+      return json(res, 413, { error: "Die Anfrage ist zu gross." });
+    }
     return json(res, 400, { error: "Anfrage konnte nicht verarbeitet werden." });
   }
 });
 
-/* ------------------------------ Start ----------------------------------- */
+/* ------------------------------ Startup --------------------------------- */
 const argv = process.argv.slice(2);
 if (argv[0] === "--set-password") { setPassword(argv[1], argv[2]); process.exit(0); }
 if (argv[0] === "--remove-user") {
   const u = readUsers(); delete u[argv[1]]; writeUsers(u);
-  console.log(`Benutzer "${argv[1]}" entfernt.`); process.exit(0);
+  console.log(`User "${argv[1]}" removed.`); process.exit(0);
 }
 
 if (!Object.keys(readUsers()).length) {
-  console.log("\n  Noch kein Zugang eingerichtet. Zuerst:\n");
-  console.log('    node server.js --set-password nick "ein-langes-passwort"\n');
+  console.log("\n  No access set up yet. First run:\n");
+  console.log('    node server.js --set-password nick "a-long-password"\n');
 }
 server.listen(PORT, HOST, () => {
   console.log(`  Website:      http://${HOST}:${PORT}/`);

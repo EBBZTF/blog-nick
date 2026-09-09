@@ -1,37 +1,47 @@
 #!/usr/bin/env bash
-# Sichert den Inhalt der Website (data/) weg von der SD-Karte.
+# Backs up the content of the website (data/) away from the SD card.
 #
-# Die Karte in einer Pi geht irgendwann kaputt — data/backups/ liegt auf
-# derselben Karte und hilft dann nicht. Dieses Skript legt einen datierten
-# Schnappschuss an und schiebt ihn optional auf ein anderes Gerät.
+# The card in a Pi eventually fails — data/backups/ sits on that same card and
+# is no help then. This script writes a dated snapshot and optionally pushes it
+# to another machine.
 #
-#   ./deploy/backup-content.sh                         # nur lokal (/home/pi/backups)
-#   ./deploy/backup-content.sh pi@nas:/backups/website # zusätzlich per rsync
+#   ./deploy/backup-content.sh                         # local only (/home/pi/backups)
+#   ./deploy/backup-content.sh pi@nas:/backups/website # additionally via rsync
 
 set -euo pipefail
 
-PROJEKT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-QUELLE="$PROJEKT/data"
-LOKAL="${BACKUP_DIR:-$HOME/backups/nickberdi}"
-BEHALTEN="${BACKUP_KEEP:-30}"
-ZIEL="${1:-}"
+PROJECT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SOURCE="$PROJECT/data"
+LOCAL="${BACKUP_DIR:-$HOME/backups/nickberdi}"
+KEEP="${BACKUP_KEEP:-30}"
+TARGET="${1:-}"
 
-[ -d "$QUELLE" ] || { echo "data/ nicht gefunden: $QUELLE" >&2; exit 1; }
+[ -d "$SOURCE" ] || { echo "data/ not found: $SOURCE" >&2; exit 1; }
 
-mkdir -p "$LOKAL"
-STEMPEL="$(date +%Y-%m-%d_%H%M%S)"
-ARCHIV="$LOKAL/data-$STEMPEL.tar.gz"
+mkdir -p "$LOCAL"
+STAMP="$(date +%Y-%m-%d_%H%M%S)"
+ARCHIVE="$LOCAL/data-$STAMP.tar.gz"
 
-tar -czf "$ARCHIV" -C "$PROJEKT" data
-echo "Gesichert: $ARCHIV"
+# Uploaded images are excluded on purpose: they would sit in all $KEEP
+# archives and blow the backup up from kilobytes to hundreds of megabytes.
+# They are pushed to the target incrementally further down instead.
+tar -czf "$ARCHIVE" --exclude="data/uploads" -C "$PROJECT" data
+echo "Backed up: $ARCHIVE"
 
-# Alte Schnappschüsse aufräumen, die letzten $BEHALTEN bleiben liegen.
-ls -1t "$LOKAL"/data-*.tar.gz 2>/dev/null | tail -n +$((BEHALTEN + 1)) | while read -r alt; do
-	rm -f "$alt"
-	echo "Entfernt: $alt"
+# Clear out old snapshots, the last $KEEP are kept.
+ls -1t "$LOCAL"/data-*.tar.gz 2>/dev/null | tail -n +$((KEEP + 1)) | while read -r old; do
+	rm -f "$old"
+	echo "Removed: $old"
 done
 
-if [ -n "$ZIEL" ]; then
-	rsync -a "$ARCHIV" "$ZIEL/"
-	echo "Kopiert nach: $ZIEL"
+if [ -n "$TARGET" ]; then
+	rsync -a "$ARCHIVE" "$TARGET/"
+	echo "Copied to: $TARGET"
+
+	# Images separately and incrementally: only what is new goes over the wire,
+	# and one copy is enough because the files never change under their name.
+	if [ -d "$SOURCE/uploads" ]; then
+		rsync -a --delete "$SOURCE/uploads/" "$TARGET/uploads/"
+		echo "Images synced to: $TARGET/uploads/"
+	fi
 fi

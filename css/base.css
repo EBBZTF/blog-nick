@@ -9,8 +9,8 @@
   --dusk:#4C6E8C;
   --line:#D9D5CC;
   --m1:#4E9AD1; --m2:#16326B; --m3:#C0272D;
-  --ok:#2E7D32;          /* Rueckmeldung: hat geklappt */
-  --fehler:#B3261E;      /* Rueckmeldung: hat nicht geklappt */
+  --ok:#2E7D32;          /* feedback: it worked */
+  --error:#B3261E;      /* feedback: it did not work */
 }
 *{box-sizing:border-box}
 html,body{margin:0}

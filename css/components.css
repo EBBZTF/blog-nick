@@ -1,17 +1,17 @@
 /* Discipline badges, setup cards and run tables */
 /* discipline badges */
-.disz{display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:11px;
+.discipline{display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:11px;
   border:1px solid var(--line);background:var(--chalk);border-radius:999px;padding:2px 9px 2px 7px;white-space:nowrap;color:#4E5357}
-.disz:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--stone,#888)}
-.disz.berg:before{background:var(--needle)}
-.disz.rallye:before{background:var(--m3)}
-.disz.dk{background:transparent;border-color:#4A5256;color:#B4BABD}
-.tbl .disz{font-size:10.5px}
+.discipline:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--stone,#888)}
+.discipline.hill:before{background:var(--needle)}
+.discipline.rally:before{background:var(--m3)}
+.discipline.dk{background:transparent;border-color:#4A5256;color:#B4BABD}
+.tbl .discipline{font-size:10.5px}
 .setups{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:18px}
 .setup{border:1px solid #3E4548;padding:15px 16px}
 .setup h3{font-size:18px;margin-bottom:6px}
 .setup p{font-size:13.5px;color:#A9B0B4;margin:0}
-.setup .disz{margin-bottom:9px}
+.setup .discipline{margin-bottom:9px}
 .runs{display:flex;flex-wrap:wrap;gap:0;margin-top:11px;border:1px solid var(--line);background:var(--alpine)}
 .runs div{padding:7px 13px;border-right:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:12.5px}
 .runs div:last-child{border-right:none}
@@ -34,6 +34,10 @@
 /* ---------- journal post list ---------- */
 .posts{display:grid;gap:14px;margin-top:16px}
 .post{border:1px solid var(--line);background:var(--chalk);padding:17px}
+/* Runs to the edge of the card: the padding is cancelled out with a negative
+   margin, so the image does not sit inside a white frame. */
+.post img{display:block;width:calc(100% + 34px);margin:-17px -17px 12px;
+  aspect-ratio:16/9;object-fit:cover}
 .post h3{font-size:20px;margin:6px 0 4px}
 .post .dateline{font-family:"IBM Plex Mono",monospace;font-size:12px;color:#7C8388}
 .post p{margin:6px 0 0;font-size:14.5px;color:#4E5357}
@@ -55,17 +59,17 @@
   stroke-width:2.2;stroke-dasharray:7 5}
 .carmap .spot circle{fill:var(--bbs)}
 .carmap .spot text{fill:#16181A;font-family:Archivo,sans-serif;font-weight:800;font-size:16px;text-anchor:middle}
-.carmap .spot.taken rect,.carmap .spot.taken polygon{fill:rgba(51,56,59,.10);stroke:#9AA0A4;stroke-dasharray:none}
-.carmap .spot.taken circle{fill:#9AA0A4}
+.carmap .spot.is-taken rect,.carmap .spot.is-taken polygon{fill:rgba(51,56,59,.10);stroke:#9AA0A4;stroke-dasharray:none}
+.carmap .spot.is-taken circle{fill:#9AA0A4}
 
-.spotlist{list-style:none;margin:18px 0 0;padding:0;display:grid;
+.spot-list{list-style:none;margin:18px 0 0;padding:0;display:grid;
   grid-template-columns:repeat(2,1fr);gap:8px 18px;counter-reset:none}
-.spotlist li{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:7px 0;font-size:14.5px}
-.spotlist .num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--bbs);color:#16181A;
+.spot-list li{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:7px 0;font-size:14.5px}
+.spot-list .num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--bbs);color:#16181A;
   font-family:Archivo,sans-serif;font-weight:800;font-size:13px;display:grid;place-items:center}
-.spotlist b{font-weight:600;margin-right:auto}
-.spotlist i{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--m3)}
-.spotlist li.taken .num{background:#9AA0A4}
-.spotlist li.taken i{color:#7C8388}
+.spot-list b{font-weight:600;margin-right:auto}
+.spot-list i{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--m3)}
+.spot-list li.is-taken .num{background:#9AA0A4}
+.spot-list li.is-taken i{color:#7C8388}
 
-@media (max-width:760px){ .spotlist{grid-template-columns:1fr} }
+@media (max-width:760px){ .spot-list{grid-template-columns:1fr} }

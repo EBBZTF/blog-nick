@@ -14,7 +14,7 @@
 .site>.tri:first-child{position:sticky;top:0;z-index:60}
 .nav{position:sticky;top:4px;z-index:59;display:flex;align-items:center;gap:17px;padding:13px 26px;background:var(--anthracite);color:var(--alpine)}
 .mark{display:flex;align-items:center;gap:10px;margin-right:auto}
-.mark .kid{color:var(--alpine);opacity:.9;flex:none}
+.mark .grille{color:var(--alpine);opacity:.9;flex:none}
 .mark b{font-family:Archivo,sans-serif;font-weight:800;font-size:15px;letter-spacing:.05em}
 .mark span{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--bbs)}
 .nav a{color:#AEB5B8;text-decoration:none;font-size:13.5px;font-weight:500}
@@ -36,17 +36,17 @@
 .btn-o{border-color:#5A6266;color:var(--alpine)}
 .btn-d{background:var(--anthracite);color:var(--alpine)}
 .btn-l{border-color:var(--line);color:var(--graphite)}
-/* Der Absende-Knopf im Kontaktformular ist ein <button>, alle uebrigen .btn
-   sind Links. Ohne diese Zeile faellt er wegen der Browser-Vorgaben fuer
-   line-height und appearance flacher aus als die Knoepfe daneben. */
+/* The submit button of the contact form is a <button>, every other .btn is a
+   link. Without this line the browser defaults for line-height and appearance
+   make it shorter than the buttons next to it. */
 button.btn{line-height:inherit;-webkit-appearance:none;appearance:none}
 
-/* Statuszeile unter dem Kontaktformular. Die Farbe steckt hier und nicht
-   im Skript — sonst haette das Formular eigene Farbwerte am Token-System
-   vorbei. Ohne Zustandsklasse bleibt die Zeile unsichtbar leer. */
+/* Status line under the contact form. The colour lives here and not in the
+   script — otherwise the form would carry its own colour values, bypassing the
+   token system. Without a state class the line stays invisibly empty. */
 .formstatus{font-size:13px;margin:10px 0 0;min-height:1.2em}
 .formstatus.is-ok{color:var(--ok)}
-.formstatus.is-fehler{color:var(--fehler)}
+.formstatus.is-error{color:var(--error)}
 
 /* headlight divider */
 .lamps{display:flex;justify-content:center;padding:22px 0 4px;color:var(--line)}
@@ -68,9 +68,9 @@ button.btn{line-height:inherit;-webkit-appearance:none;appearance:none}
 .sec{padding:34px 0}
 .sec.dk{background:var(--anthracite);color:var(--alpine)}
 .sec.dk h2{color:var(--alpine)}
-.sec.dk .lede{color:#A9B0B4}
+.sec.dk .intro{color:#A9B0B4}
 .sec h2{font-size:28px;margin-bottom:5px}
-.sec .lede{color:#5E6367;margin-bottom:20px;font-size:14.5px}
+.sec .intro{color:#5E6367;margin-bottom:20px;font-size:14.5px}
 
 /* result */
 .result{display:grid;grid-template-columns:84px 1fr;gap:18px;background:var(--chalk);border:1px solid var(--line);
@@ -120,8 +120,8 @@ button.btn{line-height:inherit;-webkit-appearance:none;appearance:none}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .cell{position:relative;overflow:hidden;background:var(--graphite);aspect-ratio:4/3}
 .cell img{width:100%;height:100%;object-fit:cover;display:block}
-/* Hochformat, bei dem das Auto im unteren Bilddrittel steht */
-.cell img.tief{object-position:center 78%}
+/* Portrait shots where the car sits in the lower third of the frame */
+.cell img.low-crop{object-position:center 78%}
 .cell .cap{position:absolute;left:0;right:0;bottom:0;padding:16px 10px 8px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;
   color:#EDEAE4;background:linear-gradient(transparent,rgba(0,0,0,.72))}
 

@@ -1,14 +1,14 @@
-# systemd-Unit für den Website-Server.
+# systemd unit for the website server.
 #
 #   sudo cp deploy/nickberdi.service /etc/systemd/system/
 #   sudo systemctl daemon-reload
 #   sudo systemctl enable --now nickberdi
 #   systemctl status nickberdi
 #
-# Pfade und Benutzer unten anpassen, falls das Projekt woanders liegt.
+# Adjust the paths and user below if the project lives somewhere else.
 
 [Unit]
-Description=berdi-racing.com — Website und Admin-Bereich
+Description=berdi-racing.com — website and admin area
 Documentation=file:///home/pi/nick-blog/README.md
 After=network-online.target
 Wants=network-online.target
@@ -22,13 +22,27 @@ ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=3
 
-# Caddy nimmt 80/443 entgegen und reicht hierher weiter — der Node-Server
-# bleibt deshalb bewusst auf localhost und ist von aussen nicht direkt erreichbar.
+# Caddy takes 80/443 and forwards here — which is why the Node server stays on
+# localhost and is deliberately not reachable directly from outside.
 Environment=HOST=127.0.0.1
 Environment=PORT=4000
 Environment=NODE_ENV=production
 
-# Absicherung: Der Prozess darf ausser data/ nichts auf der Platte verändern.
+# Credentials for the notification mail. Deliberately a separate file: this
+# unit is in the repository and the key must never end up there.
+#
+#   sudo install -m 600 /dev/null /etc/nickberdi.env
+#   sudo tee /etc/nickberdi.env >/dev/null <<'ENV'
+#   RESEND_API_KEY=re_...
+#   MAIL_TO=nick@berdi-racing.com
+#   MAIL_FROM=website@berdi-racing.com
+#   ENV
+#
+# If the file or any of the variables is missing, no mail is sent at all — the
+# enquiry still lands in data/inquiries.json.
+EnvironmentFile=-/etc/nickberdi.env
+
+# Hardening: the process may not change anything on disk except data/.
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict

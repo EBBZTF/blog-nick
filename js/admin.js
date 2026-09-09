@@ -1,174 +1,222 @@
-/* Admin-Bereich: bearbeitet data/content.js ohne Code anzufassen.
-   Zwei Betriebsarten:
-     server  — server.js laeuft, Anmeldung und Speichern laufen ueber /api/*
-     offline — Seite direkt geoeffnet: Anmeldung lokal, Speichern = Datei herunterladen */
+/* Admin area: edits data/content.js without touching code.
+   Two modes of operation:
+     server  — server.js is running, login and saving go through /api/*
+     offline — page opened directly: login is local, saving = download a file */
 (function () {
   "use strict";
 
-  /* ============================ Feldkatalog ============================== */
-  /* Neue Felder hier ergaenzen — das Formular baut sich daraus selbst auf.  */
+  var L = window.LABELS;
+
+  /* Options for the two coded lists. The value that ends up in the content is
+     the code; the visible word comes from js/labels.js. */
+  var DISCIPLINE_REQUIRED = L.options("discipline", ["hillclimb", "rally"]);
+  var DISCIPLINE_OPTIONAL = L.options("discipline", ["", "hillclimb", "rally"]);
+  var GALLERY_TAGS = L.options("galleryTag", ["car", "build", "rally", "hillclimb"]);
+
+  /* ============================ Field catalogue ========================== */
+  /* Add new fields here — the form builds itself from this.               */
   var SCHEMA = [
-    { id: "site", title: "Allgemein", hint: "Erscheint in der Navigation und im Fuss jeder Seite.", key: "site", fields: [
-      { k: "name",        label: "Name in der Navigation" },
-      { k: "tag",         label: "Kürzel neben dem Namen" },
-      { k: "footerBrand", label: "Name im Seitenfuss" },
-      { k: "footerText",  label: "Text im Seitenfuss", type: "area" }
+    { id: "site", title: "General", hint: "Appears in the navigation and in the footer of every page.", key: "site", fields: [
+      { k: "name",        label: "Name in the navigation" },
+      { k: "tag",         label: "Short tag next to the name" },
+      { k: "footerBrand", label: "Name in the footer" },
+      { k: "footerText",  label: "Footer text", type: "area" }
     ]},
 
-    { id: "index", title: "Startseite", hint: "Titel, Einstiegstext und die Leiste „Nächster Start“. Leer lassen heisst: noch nicht festgelegt.", key: "index", fields: [
-      { k: "heroTitle", label: "Titel" },
-      { k: "heroSub",   label: "Untertitel" },
-      { k: "heroText",  label: "Einstiegstext", type: "area" },
-      { k: "heroBtn1",  label: "Knopf 1", half: true },
-      { k: "heroBtn2",  label: "Knopf 2", half: true },
-      { k: "nextEvent",      label: "Nächster Start — Veranstaltung", half: true, sub: "— bedeutet: noch offen" },
-      { k: "nextDate",       label: "Nächster Start — Datum", half: true },
-      { k: "nextDiscipline", label: "Nächster Start — Disziplin", half: true },
-      { k: "nextSeries",     label: "Nächster Start — Serie", half: true },
-      { k: "nextStanding",   label: "Nächster Start — Zwischenstand" },
-      { k: "lastTitle", label: "Letzter Einsatz — Titel" },
-      { k: "lastText",  label: "Letzter Einsatz — Text", type: "area" },
-      { k: "partnersTitle", label: "Partner-Abschnitt — Titel" },
-      { k: "partnersLede",  label: "Partner-Abschnitt — Text", type: "area" }
+    { id: "index", title: "Home page", hint: "Title, intro text and the \u201cnext start\u201d strip. Leaving a field empty means: not decided yet.", key: "index", fields: [
+      { k: "heroTitle", label: "Title" },
+      { k: "heroSub",   label: "Subtitle" },
+      { k: "heroText",  label: "Intro text", type: "area" },
+      { k: "heroImage", label: "Large image at the top", type: "image" },
+      { k: "heroBtn1",  label: "Button 1", half: true },
+      { k: "heroBtn2",  label: "Button 2", half: true },
+      { k: "nextEvent",      label: "Next start — event", half: true, sub: "\u2014 means: still open" },
+      { k: "nextDate",       label: "Next start — date", half: true },
+      { k: "nextDiscipline", label: "Next start — discipline", half: true },
+      { k: "nextSeries",     label: "Next start — series", half: true },
+      { k: "nextStanding",   label: "Next start — standing" },
+      { k: "lastTitle", label: "Last outing — title" },
+      { k: "lastText",  label: "Last outing — text", type: "area" },
+      { k: "partnersTitle", label: "Partner section — title" },
+      { k: "partnersIntro", label: "Partner section — text", type: "area" }
     ]},
 
-    { id: "car", title: "Datenblatt", hint: "Die technischen Werte. Gewicht und Disziplinen erscheinen auch auf der Startseite.", key: "car", fields: [
-      { k: "motor",       label: "Motor (Startseite)", half: true },
-      { k: "antrieb",     label: "Antrieb", half: true },
-      { k: "gewicht",     label: "Gewicht (Startseite)", half: true },
-      { k: "disziplinen", label: "Disziplinen", half: true },
-      { k: "fahrgestell", label: "Fahrgestell", half: true },
-      { k: "motorLang",   label: "Motor (Datenblatt)", half: true },
-      { k: "leistung",    label: "Leistung", half: true },
-      { k: "getriebe",    label: "Getriebe", half: true },
-      { k: "gewichtLang", label: "Gewicht (Datenblatt)", half: true },
-      { k: "raeder",      label: "Räder", half: true },
-      { k: "sicherheit",  label: "Sicherheit", half: true },
-      { k: "lack",        label: "Lack", half: true }
+    /* The three long texts are plain textareas: a blank line becomes a new
+       paragraph when the page is rendered (data-cms-para in js/content.js), so
+       there is nothing to learn and no markup to get wrong. */
+    { id: "about", title: "About me", hint: "The page ueber-mich.html — Nick writes here himself. A blank line in the long texts starts a new paragraph.", key: "about", fields: [
+      { k: "title",     label: "Name / title" },
+      { k: "sub",       label: "Line under the name" },
+      { k: "intro",     label: "Short intro next to the photo", type: "area" },
+      { k: "heroImage", label: "Photo", type: "image" },
+      { k: "factBorn",        label: "Year of birth", half: true },
+      { k: "factHome",        label: "Home", half: true },
+      { k: "factDisciplines", label: "Disciplines", half: true },
+      { k: "factLicence",     label: "Licence", half: true, sub: "— means: still open" },
+      { k: "motivationTitle", label: "Section 1 — heading" },
+      { k: "motivation",      label: "Section 1 — text", type: "area", rows: 8, sub: "Blank line = new paragraph" },
+      { k: "startTitle",      label: "Section 2 — heading" },
+      { k: "start",           label: "Section 2 — text", type: "area", rows: 8, sub: "Blank line = new paragraph" },
+      { k: "goalsTitle",      label: "Section 3 — heading" },
+      { k: "goals",           label: "Section 3 — text", type: "area", rows: 8, sub: "Blank line = new paragraph" },
+      { k: "ctaTitle",   label: "Closing box — heading" },
+      { k: "ctaText",    label: "Closing box — text", type: "area" },
+      { k: "ctaBtn1",    label: "Closing box — button 1", half: true },
+      { k: "ctaBtn2",    label: "Closing box — button 2", half: true }
     ]},
 
-    { id: "auto", title: "Seite „Das Auto“", key: "auto", fields: [
-      { k: "title",       label: "Titel" },
-      { k: "lede",        label: "Einstiegstext", type: "area" },
-      { k: "setupsTitle", label: "Titel des Abschnitts mit den zwei Kacheln" },
-      { k: "rallyeTitle", label: "Kachel Rallye — Titel" },
-      { k: "rallyeText",  label: "Kachel Rallye — Text", type: "area" },
-      { k: "bergTitle",   label: "Kachel Bergrennen — Titel" },
-      { k: "bergText",    label: "Kachel Bergrennen — Text", type: "area" }
+    { id: "car", title: "Spec sheet", hint: "The technical figures. Weight and disciplines also appear on the home page.", key: "car", fields: [
+      { k: "engine",      label: "Engine (home page)", half: true },
+      { k: "drivetrain",  label: "Drivetrain", half: true },
+      { k: "weight",      label: "Weight (home page)", half: true },
+      { k: "disciplines", label: "Disciplines", half: true },
+      { k: "chassis",     label: "Chassis", half: true },
+      { k: "engineLong",  label: "Engine (spec sheet)", half: true },
+      { k: "power",       label: "Power", half: true },
+      { k: "gearbox",     label: "Gearbox", half: true },
+      { k: "weightLong",  label: "Weight (spec sheet)", half: true },
+      { k: "wheels",      label: "Wheels", half: true },
+      { k: "safety",      label: "Safety", half: true },
+      { k: "paint",       label: "Paint", half: true }
     ]},
 
-    { id: "saison", title: "Saison", hint: "Solange keine Resultate erfasst sind, zeigt die Seite einen Hinweis statt einer Tabelle.", key: "saison", fields: [
-      { k: "lede",        label: "Einstiegstext", type: "area" },
-      { k: "statStarts",  label: "Kennzahl Starts", half: true },
-      { k: "statPodeste", label: "Kennzahl Klassenpodeste", half: true },
-      { k: "statSiege",   label: "Kennzahl Klassensiege", half: true },
-      { k: "wegLede",     label: "Werdegang — Einstiegstext", type: "area" }
+    { id: "carPage", title: "\u201cThe car\u201d page", key: "carPage", fields: [
+      { k: "title",       label: "Title" },
+      { k: "intro",       label: "Intro text", type: "area" },
+      { k: "heroImage",   label: "Large image at the top", type: "image" },
+      { k: "setupsTitle", label: "Title of the section with the two tiles" },
+      { k: "rallyTitle",  label: "Rally tile — title" },
+      { k: "rallyText",   label: "Rally tile — text", type: "area" },
+      { k: "hillTitle",   label: "Hillclimb tile — title" },
+      { k: "hillText",    label: "Hillclimb tile — text", type: "area" },
+      { k: "image1",      label: "Image 1 of the three tiles", type: "image" },
+      { k: "caption1",    label: "Caption 1" },
+      { k: "image2",      label: "Image 2 of the three tiles", type: "image" },
+      { k: "caption2",    label: "Caption 2" },
+      { k: "image3",      label: "Image 3 of the three tiles", type: "image" },
+      { k: "caption3",    label: "Caption 3" }
     ]},
 
-    { id: "events", title: "Resultate", hint: "Ein Eintrag pro Veranstaltung. Sobald der erste erfasst ist, erscheint auf der Saison-Seite die Tabelle.", list: "events",
-      label: function (o) { return (o.datum || "") + " " + (o.name || "Neue Veranstaltung"); },
+    { id: "season", title: "Season", hint: "As long as no results are entered, the page shows a note instead of a table.", key: "season", fields: [
+      { k: "intro",        label: "Intro text", type: "area" },
+      { k: "statStarts",   label: "Figure: starts", half: true },
+      { k: "statPodiums",  label: "Figure: class podiums", half: true },
+      { k: "statWins",     label: "Figure: class wins", half: true },
+      { k: "historyIntro", label: "Career — intro text", type: "area" }
+    ]},
+
+    { id: "events", title: "Results", hint: "One entry per event. As soon as the first one exists, the table appears on the season page.", list: "events",
+      label: function (o) { return (o.date || "") + " " + (o.name || "New event"); },
       item: [
-        { k: "datum",    label: "Datum", half: true, sub: "z. B. 07.06." },
-        { k: "name",     label: "Veranstaltung", half: true },
-        { k: "disziplin", label: "Disziplin", type: "select", options: ["Bergrennen", "Rallye"], half: true },
-        { k: "klasse",   label: "Rang Klasse", half: true, sub: "z. B. 1." },
-        { k: "gesamt",   label: "Rang gesamt", half: true },
-        { k: "bestzeit", label: "Bestzeit", half: true }
+        { k: "date",        label: "Date", half: true, sub: "e.g. 07.06." },
+        { k: "name",        label: "Event", half: true },
+        { k: "discipline",  label: "Discipline", type: "select", options: DISCIPLINE_REQUIRED, half: true },
+        { k: "classRank",   label: "Class position", half: true, sub: "e.g. 1." },
+        { k: "overallRank", label: "Overall position", half: true },
+        { k: "bestTime",    label: "Best time", half: true }
       ]},
 
-    { id: "timeline", title: "Werdegang", hint: "Erscheint auf der Saison-Seite, neuestes Jahr zuoberst.", list: "timeline",
-      label: function (o) { return (o.year || "") + " — " + (o.title || "Neuer Eintrag"); },
+    { id: "timeline", title: "Career", hint: "Appears on the season page, most recent year at the top.", list: "timeline",
+      label: function (o) { return (o.year || "") + " — " + (o.title || "New entry"); },
       item: [
-        { k: "year",  label: "Jahr", half: true },
-        { k: "title", label: "Titel", half: true },
+        { k: "year",  label: "Year", half: true },
+        { k: "title", label: "Title", half: true },
         { k: "text",  label: "Text", type: "area" }
       ]},
 
-    { id: "partner", title: "Seite „Partner“", key: "partner", fields: [
-      { k: "heroTitle", label: "Titel" },
-      { k: "heroText",  label: "Einstiegstext", type: "area" },
-      { k: "kpiRenntage",    label: "Renntage pro Saison", half: true, sub: "— bedeutet: noch offen" },
-      { k: "kpiDisziplinen", label: "Disziplinen", half: true },
+    { id: "partner", title: "\u201cPartner\u201d page", key: "partner", fields: [
+      { k: "heroTitle", label: "Title" },
+      { k: "heroText",  label: "Intro text", type: "area" },
+      { k: "heroImage", label: "Image at the top right", type: "image" },
+      { k: "kpiRaceDays",    label: "Race days per season", half: true, sub: "\u2014 means: still open" },
+      { k: "kpiDisciplines", label: "Disciplines", half: true },
       { k: "kpiInstagram",   label: "Instagram", half: true },
-      { k: "kpiReels",       label: "Ø Reel-Aufrufe", half: true },
-      { k: "kpiPresse",      label: "Pressebeiträge", half: true },
-      { k: "pkgTitle",    label: "Pakete — Titel" },
-      { k: "pkgLede",     label: "Pakete — Einstiegstext", type: "area" },
-      { k: "pkgNote",     label: "Pakete — Hinweis darunter", type: "area" },
-      { k: "currentLede", label: "Aktuelle Partner — Text", type: "area" }
+      { k: "kpiReels",       label: "Avg. reel views", half: true },
+      { k: "kpiPress",       label: "Press mentions", half: true },
+      { k: "pkgTitle",     label: "Packages — title" },
+      { k: "pkgIntro",     label: "Packages — intro text", type: "area" },
+      { k: "pkgNote",      label: "Packages — note below", type: "area" },
+      { k: "currentIntro", label: "Current partners — text", type: "area" }
     ]},
 
-    { id: "packages", title: "Sponsoring-Pakete", hint: "Reihenfolge = Reihenfolge auf der Seite. Das hervorgehobene Paket steht optisch im Vordergrund.", list: "packages",
-      label: function (o) { return o.title || "Neues Paket"; },
+    { id: "packages", title: "Sponsoring packages", hint: "Order here = order on the page. The highlighted package stands out visually.", list: "packages",
+      label: function (o) { return o.title || "New package"; },
       item: [
-        { k: "title", label: "Titel", half: true },
-        { k: "kind",  label: "Art", half: true, sub: "z. B. Sachleistung" },
-        { k: "price", label: "Preis" },
-        { k: "items", label: "Leistungen", type: "lines", sub: "Eine Zeile pro Punkt" },
-        { k: "lead",  label: "Hervorgehoben darstellen", type: "check" }
+        { k: "title", label: "Title", half: true },
+        { k: "kind",  label: "Kind", half: true, sub: "e.g. goods or services" },
+        { k: "price", label: "Price" },
+        { k: "items", label: "What is included", type: "lines", sub: "One line per point" },
+        { k: "lead",  label: "Show as highlighted", type: "check" }
       ]},
 
-    { id: "partners", title: "Partner-Logos", hint: "„Fläche noch frei“ zeichnet das Feld gold statt grau.", list: "partners",
-      label: function (o) { return o.name || "Neuer Partner"; },
+    { id: "partners", title: "Partner logos", hint: "\u201cSurface still free\u201d draws the box in gold instead of grey.", list: "partners",
+      label: function (o) { return o.name || "New partner"; },
       item: [
-        { k: "name", label: "Name", half: true },
-        { k: "logo", label: "Bildpfad (optional)", half: true, sub: "z. B. img/logo-meier.png" },
-        { k: "free", label: "Fläche noch frei", type: "check" }
+        { k: "name", label: "Name" },
+        { k: "logo", label: "Logo", type: "image" },
+        { k: "free", label: "Surface still free", type: "check" }
       ]},
 
-    { id: "spots", title: "Freie Flächen", hint: "Steht „vergeben“ im Feld, wird die Fläche auf der Grafik grau statt gold.", key: "spots", fields: [
-      { k: "lede", label: "Einstiegstext", type: "area" },
-      { k: "s1", label: "1 · Vorderer Kotflügel", type: "select", options: ["frei", "vergeben"], half: true },
-      { k: "s2", label: "2 · Vordertür", type: "select", options: ["frei", "vergeben"], half: true },
-      { k: "s3", label: "3 · Seitenteil hinten", type: "select", options: ["frei", "vergeben"], half: true },
-      { k: "s4", label: "4 · Schweller", type: "select", options: ["frei", "vergeben"], half: true },
-      { k: "s5", label: "5 · Seitenscheibe hinten", type: "select", options: ["frei", "vergeben"], half: true },
-      { k: "t1", label: "6 · Motorhaube", type: "select", options: ["frei", "vergeben"], half: true },
-      { k: "t2", label: "7 · Dach", type: "select", options: ["frei", "vergeben"], half: true },
-      { k: "t3", label: "8 · Kofferraumdeckel", type: "select", options: ["frei", "vergeben"], half: true }
+    { id: "spots", title: "Free surfaces", hint: "Ticked means: the surface is taken and is drawn grey instead of gold in the diagram.", key: "spots", fields: [
+      { k: "intro", label: "Intro text", type: "area" },
+      { k: "s1", label: "1 · Front wing is taken", type: "check" },
+      { k: "s2", label: "2 · Front door is taken", type: "check" },
+      { k: "s3", label: "3 · Rear quarter panel is taken", type: "check" },
+      { k: "s4", label: "4 · Sill is taken", type: "check" },
+      { k: "s5", label: "5 · Rear side window is taken", type: "check" },
+      { k: "t1", label: "6 · Bonnet is taken", type: "check" },
+      { k: "t2", label: "7 · Roof is taken", type: "check" },
+      { k: "t3", label: "8 · Boot lid is taken", type: "check" }
     ]},
 
-    { id: "gallery", title: "Galerie", hint: "Bild zuerst in den Ordner img/ legen, dann hier den Pfad eintragen.", list: "gallery",
-      label: function (o) { return o.cap || o.src || "Neues Bild"; },
+    /* No separate alt field here — the image field carries the description
+       with the picture. The caption is something else and stays its own. */
+    { id: "gallery", title: "Gallery", hint: "Pick an image, set a category — the category drives the filters on the gallery page.", list: "gallery",
+      label: function (o) { return o.cap || "New image"; },
       item: [
-        { k: "src",  label: "Bildpfad", half: true, sub: "z. B. img/front-pass.jpg" },
-        { k: "tag",  label: "Kategorie", half: true, sub: "Rallye, Bergrennen, Aufbau, Das Auto" },
-        { k: "alt",  label: "Bildbeschreibung (für Screenreader)" },
-        { k: "cap",  label: "Bildunterschrift" },
-        { k: "tief", label: "Auto sitzt tief im Bild (anderer Beschnitt)", type: "check" }
+        { k: "src",     label: "Image", type: "image" },
+        { k: "cap",     label: "Caption" },
+        { k: "tag",     label: "Category", type: "select", options: GALLERY_TAGS, half: true },
+        { k: "lowCrop", label: "Car sits low in the frame (different crop)", type: "check", half: true }
       ]},
 
-    { id: "journalTexts", title: "Seite „Journal“", key: "journal", fields: [
-      { k: "lede", label: "Einstiegstext", type: "area" }
+    { id: "journalTexts", title: "\u201cJournal\u201d page", key: "journal", fields: [
+      { k: "intro", label: "Intro text", type: "area" }
     ]},
 
-    { id: "posts", title: "Journal-Einträge", hint: "Solange kein Eintrag erfasst ist, zeigt die Seite einen Hinweis.", list: "posts",
-      label: function (o) { return o.titel || "Neuer Eintrag"; },
+    { id: "posts", title: "Journal entries", hint: "As long as no entry exists, the page shows a note. A blank line in the text starts a new paragraph.", list: "posts",
+      label: function (o) { return o.title || "New entry"; },
       item: [
-        { k: "datum",     label: "Datum", half: true, sub: "z. B. 9. Juni 2027" },
-        { k: "disziplin", label: "Disziplin", type: "select", options: ["", "Bergrennen", "Rallye"], half: true },
-        { k: "titel",     label: "Titel" },
-        { k: "text",      label: "Text", type: "area", rows: 8 }
+        { k: "date",       label: "Date", half: true, sub: "e.g. 9. Juni 2027" },
+        { k: "discipline", label: "Disziplin", type: "select", options: DISCIPLINE_OPTIONAL, half: true },
+        { k: "title",      label: "Title" },
+        { k: "image",      label: "Lead image", type: "image" },
+        { k: "text",       label: "Text", type: "area", rows: 8, sub: "Blank line = new paragraph" }
       ]},
 
-    { id: "galerieTexts", title: "Galerie-Text", key: "galerie", fields: [
-      { k: "lede", label: "Einstiegstext", type: "area" }
+    { id: "galleryTexts", title: "Gallery text", key: "galleryPage", fields: [
+      { k: "intro", label: "Intro text", type: "area" }
     ]},
 
-    { id: "kontakt", title: "Kontakt", key: "kontakt", fields: [
-      { k: "lede",      label: "Einstiegstext", type: "area" },
-      { k: "asideText", label: "Ansprechperson — Text", type: "area" },
-      { k: "mail",      label: "E-Mail", half: true },
-      { k: "tel",       label: "Telefon", half: true },
-      { k: "ort",       label: "Ort" },
-      { k: "pdfText",   label: "Text zum Unterlagen-Download", type: "area" }
+    /* Read-only: enquiries are not content, they arrive from the form. Hence
+       neither "key" nor "list" but its own panel. */
+    { id: "inquiries", title: "Enquiries", custom: "inquiries",
+      hint: "Enquiries received through the contact form. Most recent at the top." },
+
+    { id: "contact", title: "Contact", key: "contact", fields: [
+      { k: "intro",     label: "Intro text", type: "area" },
+      { k: "asideText", label: "Contact person — text", type: "area" },
+      { k: "mail",      label: "E-mail", half: true },
+      { k: "phone",     label: "Phone", half: true },
+      { k: "city",      label: "Town" },
+      { k: "pdfText",   label: "Text for the document download", type: "area" }
     ]}
   ];
 
-  /* ============================ Zustand ================================== */
+  /* ============================ State =================================== */
   var data = JSON.parse(JSON.stringify(window.SITE_CONTENT || {}));
   var dirty = false;
-  var mode = "offline";           /* "server" sobald /api/session antwortet */
+  var mode = "offline";           /* "server" as soon as /api/session answers */
   var $ = function (id) { return document.getElementById(id); };
 
   function markDirty() { dirty = true; $("bar").classList.add("is-dirty"); }
@@ -183,7 +231,7 @@
     toastTimer = setTimeout(function () { t.className = "toast"; }, 2600);
   }
 
-  /* ============================ Formularbau ============================== */
+  /* ============================ Building the form ======================== */
   function field(spec, get, set) {
     var wrap = document.createElement("div");
     var id = "f_" + Math.random().toString(36).slice(2, 9);
@@ -199,6 +247,10 @@
       return wrap;
     }
 
+    if (spec.type === "image") {
+      return imageField(spec, get, set);
+    }
+
     wrap.className = "fld";
     var lab = document.createElement("label");
     lab.htmlFor = id; lab.textContent = spec.label;
@@ -207,12 +259,17 @@
     var input;
     if (spec.type === "select") {
       input = document.createElement("select");
+      /* Options are {value, label} pairs: the code is stored, the word is
+         shown. Plain strings are still accepted for simple lists. */
       spec.options.forEach(function (o) {
+        var opt = typeof o === "string" ? { value: o, label: o } : o;
         var op = document.createElement("option");
-        op.value = o; op.textContent = o === "" ? "— keine —" : o;
+        op.value = opt.value;
+        op.textContent = opt.label === "" ? "— none —" : opt.label;
         input.appendChild(op);
       });
-      input.value = get() || spec.options[0];
+      var current = get();
+      input.value = current == null ? firstOptionValue(spec.options) : current;
     } else if (spec.type === "area" || spec.type === "lines") {
       input = document.createElement("textarea");
       input.rows = spec.rows || (spec.type === "lines" ? 6 : 3);
@@ -244,7 +301,12 @@
     return wrap;
   }
 
-  /* Legt Felder mit half:true paarweise nebeneinander. */
+  function firstOptionValue(options) {
+    var first = options[0];
+    return typeof first === "string" ? first : first.value;
+  }
+
+  /* Lays out fields with half:true side by side in pairs. */
   function fieldsInto(host, specs, obj) {
     var i = 0;
     while (i < specs.length) {
@@ -273,11 +335,15 @@
 
     var add = document.createElement("button");
     add.className = "abtn abtn-l";
-    add.textContent = "+ Eintrag hinzufügen";
+    add.textContent = "+ Add entry";
     add.addEventListener("click", function () {
       var blank = {};
       group.item.forEach(function (f) {
-        blank[f.k] = f.type === "check" ? false : (f.type === "lines" ? [] : "");
+        if (f.type === "check") blank[f.k] = false;
+        else if (f.type === "lines") blank[f.k] = [];
+        else if (f.type === "image") blank[f.k] = null;
+        else if (f.type === "select") blank[f.k] = firstOptionValue(f.options);
+        else blank[f.k] = "";
       });
       arr.push(blank); markDirty(); render();
     });
@@ -288,7 +354,7 @@
       if (!arr.length) {
         var e = document.createElement("div");
         e.className = "listempty";
-        e.textContent = "Noch kein Eintrag erfasst.";
+        e.textContent = "No entry yet.";
         box.appendChild(e);
         return;
       }
@@ -310,9 +376,9 @@
 
         var del = document.createElement("button");
         del.className = "abtn abtn-x";
-        del.textContent = "Löschen";
+        del.textContent = "Delete";
         del.addEventListener("click", function () {
-          if (!confirm("Eintrag „" + group.label(obj) + "“ wirklich löschen?")) return;
+          if (!confirm("Really delete the entry \u201c" + group.label(obj) + "\u201d?")) return;
           arr.splice(idx, 1); markDirty(); render();
         });
         head.appendChild(del);
@@ -359,7 +425,9 @@
         panel.appendChild(p);
       }
 
-      if (group.list) {
+      if (group.custom === "inquiries") {
+        inquiriesPanel(panel, tab);
+      } else if (group.list) {
         listPanel(panel, group);
       } else {
         if (!data[group.key]) data[group.key] = {};
@@ -376,13 +444,18 @@
     });
   }
 
-  /* ============================ Speichern ================================ */
+  /* ============================ Saving =================================== */
+  /* Must stay character for character identical to CONTENT_HEADER in
+     server.js, or the header of data/content.js flips back and forth
+     depending on whether it was written here or there. */
+  var CONTENT_HEADER =
+    "/* Content of the website — the single source of truth.\n" +
+    "   Written by the admin area (admin.html), never by hand.\n" +
+    "   Deliberately a .js file: that way the site can also be opened by simply\n" +
+    "   double-clicking it, where fetch() would be blocked by CORS. */\n";
+
   function fileText() {
-    return "/* Inhalt der Website — einzige Quelle der Wahrheit.\n" +
-           "   Wird vom Admin-Bereich (admin.html) geschrieben, nicht von Hand.\n" +
-           "   Bewusst eine .js-Datei: so laesst sich die Seite auch ohne Server\n" +
-           "   direkt per Doppelklick oeffnen (fetch() waere hier durch CORS blockiert). */\n" +
-           "window.SITE_CONTENT = " + JSON.stringify(data, null, 2) + ";\n";
+    return CONTENT_HEADER + "window.SITE_CONTENT = " + JSON.stringify(data, null, 2) + ";\n";
   }
 
   function download() {
@@ -392,7 +465,7 @@
     a.download = "content.js";
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-    toast("Datei heruntergeladen — als data/content.js auf den Webspace laden.");
+    toast("File downloaded — upload it to the web space as data/content.js.");
   }
 
   function save() {
@@ -401,59 +474,59 @@
     API.post("api/content", data)
       .then(function () {
         markClean();
-        toast("Gespeichert. Die Website zeigt die Änderungen sofort.");
+        toast("Saved. The website shows the changes right away.");
       })
       .catch(function (err) {
-        /* Sitzung abgelaufen — neu laden führt zurück aufs Anmeldeformular. */
+        /* Session expired — reloading leads back to the login form. */
         if (err.status === 401) { location.reload(); return; }
-        toast(err.message + " Notfalls die Datei herunterladen.", true);
+        toast(err.message + " If needed, download the file instead.", true);
       })
       .then(function () { $("btnSave").disabled = false; });
   }
 
-  /* Gespeicherten Stand holen und danach weitermachen. Scheitert das Laden,
-     bleibt der Stand aus data/content.js stehen — die Oberfläche soll auch
-     dann aufgehen. Wird von boot() und von der Anmeldung benutzt. */
-  function ladeInhaltDann(fertig) {
+  /* Fetch the saved state and then carry on. If loading fails, the state from
+     data/content.js stays in place — the interface should open even then.
+     Used by boot() and by the login. */
+  function loadContentThen(done) {
     API.get("api/content")
       .then(function (c) { if (c) data = c; })
       .catch(function () {})
-      .then(fertig);
+      .then(done);
   }
 
-  /* ============================ Anmeldung ================================ */
+  /* ============================ Login =================================== */
   function showApp(user) {
     $("login").hidden = true;
     $("app").hidden = false;
     $("who").textContent = user
-      ? user + " · " + (mode === "server" ? "Änderungen werden gespeichert" : "ohne Server — Datei herunterladen")
+      ? user + " · " + (mode === "server" ? "changes are saved" : "no server — download the file")
       : "";
-    $("btnSave").textContent = mode === "server" ? "Speichern" : "Datei herunterladen";
+    $("btnSave").textContent = mode === "server" ? "Save" : "Download file";
     $("btnDownload").hidden = mode !== "server";
     buildUI();
     markClean();
   }
 
   function boot() {
-    /* Zwei Rückrufe statt .catch(): so fängt der Offline-Zweig wirklich nur
-       die Session-Anfrage ab und nicht auch noch Fehler aus mitServer(). */
-    API.get("api/session").then(mitServer, ohneServer);
+    /* Two callbacks instead of .catch(): that way the offline branch really
+       only catches the session request and not errors from withServer(). */
+    API.get("api/session").then(withServer, withoutServer);
 
-    function mitServer(s) {
+    function withServer(s) {
       mode = "server";
       $("loginNote").textContent =
-        "Zugang bekommt man von Karin oder Emma. Nach dem Speichern ist die Änderung sofort online.";
-      /* Serverseitig bereits angemeldet — direkt weiter. */
-      if (s && s.user) ladeInhaltDann(function () { showApp(s.user); });
+        "Access is handed out by Karin or Emma. Once saved, the change is online immediately.";
+      /* Already logged in on the server side — straight on. */
+      if (s && s.user) loadContentThen(function () { showApp(s.user); });
     }
 
-    function ohneServer() {
-      /* Ein statischer Webspace hat kein /api — kein Fehler, sondern der
-         Betrieb ohne Server. */
+    function withoutServer() {
+      /* A plain web space has no /api — not an error, but operation without a
+         server. */
       mode = "offline";
       $("loginNote").textContent =
-        "Kein Server erkannt. Die Anmeldung ist hier nur ein Schutz gegen Verklicken; " +
-        "gespeichert wird, indem die Datei heruntergeladen und als data/content.js hochgeladen wird.";
+        "No server detected. The sign-in here only guards against a stray click; " +
+        "saving means downloading the file and uploading it as data/content.js.";
     }
   }
 
@@ -463,17 +536,17 @@
     $("loginErr").textContent = "";
 
     if (mode !== "server") {
-      if (pass.length < 4) { $("loginErr").textContent = "Passwort eingeben."; return; }
+      if (pass.length < 4) { $("loginErr").textContent = "Enter a password."; return; }
       showApp(user || "offline");
       return;
     }
     API.post("api/login", { user: user, pass: pass })
       .then(function (res) {
-        ladeInhaltDann(function () { showApp(res.user); });
+        loadContentThen(function () { showApp(res.user); });
       })
       .catch(function (err) {
-        /* Deckt beides ab: abgelehnte Anmeldung (Meldung kommt vom Server)
-           und gar keine Verbindung. */
+        /* Covers both: a rejected login (message comes from the server) and no
+           connection at all. */
         $("loginErr").textContent = err.message;
       });
   });
@@ -481,17 +554,200 @@
   $("btnSave").addEventListener("click", save);
   $("btnDownload").addEventListener("click", download);
   $("btnLogout").addEventListener("click", function () {
-    if (dirty && !confirm("Es gibt ungespeicherte Änderungen. Trotzdem abmelden?")) return;
+    if (dirty && !confirm("There are unsaved changes. Sign out anyway?")) return;
     if (mode !== "server") { location.reload(); return; }
-    /* Auch wenn das Abmelden scheitert, neu laden: die Sitzung im Browser
-       ist dann jedenfalls weg. */
-    API.post("api/logout").then(neuLaden, neuLaden);
-    function neuLaden() { location.reload(); }
+    /* Reload even if logging out fails: the session in the browser is gone
+       either way. */
+    API.post("api/logout").then(reload, reload);
+    function reload() { location.reload(); }
   });
 
   window.addEventListener("beforeunload", function (e) {
     if (dirty) { e.preventDefault(); e.returnValue = ""; }
   });
+
+  /* ============================ Enquiries =============================== */
+  /* Every enquiry used to land in a file with nobody being told. This panel is
+     the place where they can actually be read; the counter in the navigation
+     makes it visible that something is waiting.
+
+     Records written before the fields were renamed carry the German keys, and
+     an enquiry is never rewritten once it arrived, so both spellings are read
+     here. */
+  function inquiryValue(entry, name) {
+    var older = { company: "firma", phone: "telefon", message: "nachricht", subject: "betreff", received: "eingang" };
+    if (entry[name] != null && entry[name] !== "") return entry[name];
+    var fallback = older[name];
+    return fallback && entry[fallback] != null ? entry[fallback] : "";
+  }
+
+  function formatMoment(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso || "");
+    return d.toLocaleString("de-CH", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    });
+  }
+
+  function inquiriesPanel(panel, tab) {
+    if (mode !== "server") {
+      var offline = document.createElement("div");
+      offline.className = "listempty";
+      offline.textContent = "Enquiries are only available with the server running.";
+      panel.appendChild(offline);
+      return;
+    }
+
+    var actions = document.createElement("div");
+    actions.className = "inq-actions";
+    var markRead = document.createElement("button");
+    markRead.className = "abtn abtn-l";
+    markRead.textContent = "Mark all as read";
+    markRead.disabled = true;
+    actions.appendChild(markRead);
+    panel.appendChild(actions);
+
+    var box = document.createElement("div");
+    panel.appendChild(box);
+
+    var badge = document.createElement("span");
+    badge.className = "badge";
+    badge.hidden = true;
+    tab.appendChild(badge);
+
+    load();
+
+    function load() {
+      box.textContent = "Loading …";
+      API.get("api/inquiries").then(function (res) {
+        render(res.items || []);
+        setBadge(res.unread || 0);
+      }, function (err) {
+        box.textContent = err.message;
+      });
+    }
+
+    function setBadge(n) {
+      badge.hidden = n === 0;
+      badge.textContent = String(n);
+      markRead.disabled = n === 0;
+    }
+
+    markRead.addEventListener("click", function () {
+      var ids = currentIds;
+      markRead.disabled = true;
+      API.post("api/inquiries/read", { ids: ids }).then(load, function (err) {
+        toast(err.message, true);
+        markRead.disabled = false;
+      });
+    });
+
+    var currentIds = [];
+
+    function render(items) {
+      currentIds = items.map(function (e) { return e.id; });
+      box.textContent = "";
+      if (!items.length) {
+        var empty = document.createElement("div");
+        empty.className = "listempty";
+        empty.textContent = "No enquiry received yet.";
+        box.appendChild(empty);
+        return;
+      }
+      items.forEach(function (entry) {
+        box.appendChild(inquiryCard(entry));
+      });
+    }
+
+    function inquiryCard(entry) {
+      var card = document.createElement("div");
+      card.className = "card inq" + (entry.seen ? "" : " unseen");
+
+      var head = document.createElement("div");
+      head.className = "card-head";
+      var who = document.createElement("b");
+      who.textContent = entry.name || inquiryValue(entry, "company") || entry.email;
+      var when = document.createElement("span");
+      when.className = "ord";
+      when.textContent = formatMoment(inquiryValue(entry, "received"));
+      head.appendChild(who); head.appendChild(when);
+      card.appendChild(head);
+
+      var subject = inquiryValue(entry, "subject");
+      if (subject) card.appendChild(line("Subject", subject));
+
+      var company = inquiryValue(entry, "company");
+      if (company) card.appendChild(line("Company", company));
+
+      /* The address as a mailto link, so answering is one click and not a
+         copy-and-paste exercise. */
+      var mailRow = document.createElement("div");
+      mailRow.className = "inq-line";
+      mailRow.appendChild(tagOf("E-mail"));
+      var link = document.createElement("a");
+      /* The subject stays German although the rest of this area is English:
+         this mail is read by the person who sent the enquiry, not by us. */
+      link.href = "mailto:" + entry.email +
+        "?subject=" + encodeURIComponent("Re: " + (subject || "Ihre Anfrage"));
+      link.textContent = entry.email;
+      mailRow.appendChild(link);
+      card.appendChild(mailRow);
+
+      var phone = inquiryValue(entry, "phone");
+      if (phone) card.appendChild(line("Phone", phone));
+
+      var message = inquiryValue(entry, "message");
+      if (message) {
+        var msg = document.createElement("p");
+        msg.className = "inq-msg";
+        msg.textContent = message;
+        card.appendChild(msg);
+      }
+      return card;
+    }
+
+    function line(name, value) {
+      var row = document.createElement("div");
+      row.className = "inq-line";
+      row.appendChild(tagOf(name));
+      var v = document.createElement("span");
+      v.textContent = value;
+      row.appendChild(v);
+      return row;
+    }
+    function tagOf(name) {
+      var t = document.createElement("i");
+      t.textContent = name;
+      return t;
+    }
+  }
+
+  /* ============================ Image field ============================= */
+  /* Filled in by js/upload.js in the next step. Until then an image field is
+     a plain path input, so the catalogue above is already the final one. */
+  function imageField(spec, get, set) {
+    if (window.ImageField) return window.ImageField.create(spec, get, set, markDirty);
+
+    var wrap = document.createElement("div");
+    wrap.className = "fld";
+    var lab = document.createElement("label");
+    lab.textContent = spec.label;
+    wrap.appendChild(lab);
+    var input = document.createElement("input");
+    input.type = "text";
+    var v = get();
+    input.value = !v ? "" : (typeof v === "string" ? v : (v.src || ""));
+    input.addEventListener("input", function () {
+      set(input.value ? { src: input.value } : null);
+      markDirty();
+    });
+    wrap.appendChild(input);
+    var s = document.createElement("div");
+    s.className = "sub"; s.textContent = "e.g. img/front-pass.jpg";
+    wrap.appendChild(s);
+    return wrap;
+  }
 
   boot();
 })();

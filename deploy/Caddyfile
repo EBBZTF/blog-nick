@@ -1,51 +1,54 @@
-# Caddy hinter einem Cloudflare Tunnel.
+# Caddy behind a Cloudflare tunnel.
 #
-# TLS macht Cloudflare am Edge, das Zertifikat ist damit nicht mehr unsere
-# Sache. Caddy lauscht nur noch auf 127.0.0.1:8080 und ist ausschliesslich
-# ueber den Tunnel erreichbar — von aussen fuehrt kein Weg direkt hierher.
+# TLS is handled by Cloudflare at the edge, so the certificate is no longer our
+# problem. Caddy only listens on 127.0.0.1:8080 and is reachable exclusively
+# through the tunnel — there is no direct route here from outside.
 #
 #   sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
 #   sudo caddy validate --config /etc/caddy/Caddyfile
 #   sudo systemctl reload caddy
 #
-# Voraussetzung: cloudflared laeuft und reicht berdi-racing.com und
-# www.berdi-racing.com an http://localhost:8080 weiter (siehe README).
-# Portweiterleitung im Router und DDNS werden dafuer nicht mehr gebraucht.
+# Requirement: cloudflared is running and forwards berdi-racing.com and
+# www.berdi-racing.com to http://localhost:8080 (see README). Port forwarding
+# in the router and DDNS are no longer needed for this.
 
 {
-	# Kein automatisches HTTPS: Caddy soll gar nicht erst versuchen, sich ein
-	# Let's-Encrypt-Zertifikat zu holen — die Pruefung ueber Port 80 wuerde
-	# ohnehin bei Cloudflare landen und nie hier ankommen.
+	# No automatic HTTPS: Caddy should not even try to obtain a Let's Encrypt
+	# certificate — the check over port 80 would land at Cloudflare anyway and
+	# never arrive here.
 	auto_https off
 
 	servers {
-		# cloudflared laeuft auf demselben Rechner; nur ihm glauben wir die
-		# weitergereichte Client-Adresse. Ohne das saehe der Server jeden
-		# Besucher als 127.0.0.1.
+		# cloudflared runs on the same machine; it is the only one whose
+		# forwarded client address we believe. Without this the server would
+		# see every visitor as 127.0.0.1.
 		trusted_proxies static 127.0.0.1/8 ::1
 		client_ip_headers CF-Connecting-IP X-Forwarded-For
 	}
 }
 
 http://berdi-racing.com:8080, http://www.berdi-racing.com:8080 {
-	# Nur auf der Loopback-Schnittstelle lauschen: im Heimnetz kommt niemand
-	# an Caddy vorbei am Tunnel vorbei.
+	# Listen on the loopback interface only: on the home network nobody gets to
+	# Caddy while bypassing the tunnel.
 	bind 127.0.0.1
 
 	encode zstd gzip
 
 	reverse_proxy 127.0.0.1:4000 {
-		# Der Besucher spricht HTTPS mit Cloudflare, auch wenn dieser letzte
-		# Meter auf dem Pi selbst unverschluesselt ist. Davon haengt ab, dass
-		# das Sitzungs-Cookie des Admin-Bereichs das Secure-Flag bekommt.
+		# The visitor speaks HTTPS with Cloudflare, even though this last
+		# metre on the Pi itself is unencrypted. Whether the admin area's
+		# session cookie gets the Secure flag depends on this.
 		header_up X-Forwarded-Proto https
 	}
 
 	header {
+		# Only HSTS is set here: it belongs at the TLS edge.
+		# Content-Security-Policy, X-Content-Type-Options, X-Frame-Options,
+		# Referrer-Policy and Permissions-Policy come from server.js
+		# (SECURITY_HEADERS). There they live in one place, apply to local
+		# development too, and survive a mistake in this file. Setting them
+		# here as well would deliver each header twice.
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
-		X-Content-Type-Options "nosniff"
-		X-Frame-Options "DENY"
-		Referrer-Policy "strict-origin-when-cross-origin"
 		-Server
 	}
 
@@ -57,8 +60,8 @@ http://berdi-racing.com:8080, http://www.berdi-racing.com:8080 {
 	}
 }
 
-# Der Admin-Bereich wird nicht mehr hier abgeriegelt, sondern mit Cloudflare
-# Access vor /admin.html und /api (siehe README). Eine Regel auf die Client-IP
-# waere an dieser Stelle wirkungslos: hinter dem Tunnel sieht Caddy ohne die
-# trusted_proxies-Zeile oben nur 127.0.0.1, und das Heimnetz kommt hier
-# ohnehin nie als eigene Adresse an.
+# The admin area is no longer sealed off here but with Cloudflare Access in
+# front of /admin.html and /api (see README). A rule on the client IP would be
+# useless at this point: behind the tunnel, and without the trusted_proxies
+# line above, Caddy only sees 127.0.0.1, and the home network never arrives
+# here as an address of its own anyway.

@@ -1,35 +1,28 @@
-/* Filter-Chips auf Saison und Galerie.
-   Der Text des Chips ist der Filter; „Alle …“ hebt den Filter auf. */
+/* Filter chips on the season and gallery pages.
+
+   Each chip carries its code in data-filter, and each filterable element the
+   matching code in data-tag; data-filter="all" clears the filter. Previously
+   the chip's visible German text was compared against the tag, so renaming a
+   label — or translating one — silently stopped the filter from matching. */
 (function () {
-  function siblings(group) { return group.parentNode.querySelectorAll(".chip"); }
+  "use strict";
 
-  function apply(group, label) {
-    var all = /^alle/i.test(label);
+  function chipsOf(chip) { return chip.parentNode.querySelectorAll(".chip"); }
 
-    /* Galerie: Kacheln tragen data-tag */
-    var cells = document.querySelectorAll("[data-gallery] .cell");
-    if (cells.length) {
-      Array.prototype.forEach.call(cells, function (c) {
-        c.style.display = (all || c.getAttribute("data-tag") === label) ? "" : "none";
-      });
-    }
-
-    /* Saison: Zeilen tragen die Disziplin als Badge */
-    var rows = document.querySelectorAll("[data-events-table] tbody tr");
-    if (rows.length) {
-      Array.prototype.forEach.call(rows, function (r) {
-        var badge = r.querySelector(".disz");
-        var name = badge ? badge.textContent.trim() : "";
-        r.style.display = (all || name === label) ? "" : "none";
-      });
-    }
+  function apply(code) {
+    var all = code === "all";
+    /* Gallery cells and result rows both carry data-tag. */
+    var targets = document.querySelectorAll("[data-gallery] .cell[data-tag], [data-events-table] tbody tr[data-tag]");
+    Array.prototype.forEach.call(targets, function (node) {
+      node.style.display = (all || node.getAttribute("data-tag") === code) ? "" : "none";
+    });
   }
 
-  Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (c) {
-    c.addEventListener("click", function () {
-      Array.prototype.forEach.call(siblings(c), function (x) { x.classList.remove("on"); });
-      c.classList.add("on");
-      apply(c.parentNode, c.textContent.trim());
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (chip) {
+    chip.addEventListener("click", function () {
+      Array.prototype.forEach.call(chipsOf(chip), function (other) { other.classList.remove("on"); });
+      chip.classList.add("on");
+      apply(chip.getAttribute("data-filter") || "all");
     });
   });
 })();
