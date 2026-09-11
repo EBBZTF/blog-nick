@@ -19,6 +19,10 @@
   var MAIN_MAX = 2000;
   var THUMB_MAX = 480;
   var QUALITY = 0.82;
+  /* Stay clearly under the 3 MB the server accepts, so a photo never fails on
+     size — the encoder steps the quality down until it fits. */
+  var MAIN_MAX_BYTES = 2 * 1024 * 1024;
+  var THUMB_MAX_BYTES = 300 * 1024;
 
   /* ---------------------------- scaling --------------------------------- */
 
@@ -47,7 +51,52 @@
     });
   }
 
-  function scaleTo(bitmap, max) {
+  function toBlob(canvas, type, quality) {
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (blob) { resolve(blob); }, type, quality);
+    });
+  }
+
+  /* Encode as small as possible without going below a usable quality.
+
+     The format cannot simply be requested: a browser that does not support
+     WebP *encoding* — Safari, depending on version — ignores the argument and
+     silently hands back a PNG instead of failing. A 2000 px photo as PNG is
+     several megabytes, which then ran into the size limit of the upload and
+     looked to the user like "the picture is too big". So check what actually
+     came back instead of trusting the request, and fall back to JPEG, which
+     every browser can encode.
+
+     If the result is still over the limit, quality is stepped down before
+     giving up — one pass is normally enough. */
+  function encode(canvas, maxBytes) {
+    return toBlob(canvas, "image/webp", QUALITY).then(function (first) {
+      if (first && first.type === "image/webp") {
+        if (first.size <= maxBytes) return { blob: first, type: "image/webp" };
+        return stepDown(canvas, "image/webp", maxBytes);
+      }
+      /* The browser gave us something else — do not send that. */
+      return stepDown(canvas, "image/jpeg", maxBytes);
+    });
+  }
+
+  function stepDown(canvas, type, maxBytes) {
+    var steps = [QUALITY, 0.7, 0.6, 0.5];
+    var i = 0;
+    function attempt() {
+      return toBlob(canvas, type, steps[i]).then(function (blob) {
+        if (!blob) throw new Error("encode");
+        if (blob.size <= maxBytes || i === steps.length - 1) {
+          return { blob: blob, type: blob.type || type };
+        }
+        i += 1;
+        return attempt();
+      });
+    }
+    return attempt();
+  }
+
+  function scaleTo(bitmap, max, maxBytes) {
     var w = bitmap.width || bitmap.naturalWidth;
     var h = bitmap.height || bitmap.naturalHeight;
     var factor = Math.min(1, max / Math.max(w, h));
@@ -59,11 +108,8 @@
     var ctx = canvas.getContext("2d");
     ctx.drawImage(bitmap, 0, 0, outW, outH);
 
-    return new Promise(function (resolve, reject) {
-      canvas.toBlob(function (blob) {
-        if (blob) resolve({ blob: blob, w: outW, h: outH });
-        else reject(new Error("encode"));
-      }, "image/webp", QUALITY);
+    return encode(canvas, maxBytes).then(function (out) {
+      return { blob: out.blob, type: out.type, w: outW, h: outH };
     });
   }
 
@@ -75,14 +121,14 @@
     }
 
     return decode(file).then(function (bitmap) {
-      return scaleTo(bitmap, MAIN_MAX).then(function (main) {
-        return API.postBinary("api/upload?variant=main", main.blob, "image/webp")
+      return scaleTo(bitmap, MAIN_MAX, MAIN_MAX_BYTES).then(function (main) {
+        return API.postBinary("api/upload?variant=main", main.blob, main.type)
           .then(function (res) {
-            return scaleTo(bitmap, THUMB_MAX)
+            return scaleTo(bitmap, THUMB_MAX, THUMB_MAX_BYTES)
               .then(function (thumb) {
                 return API.postBinary(
                   "api/upload?variant=thumb&id=" + encodeURIComponent(res.id),
-                  thumb.blob, "image/webp");
+                  thumb.blob, thumb.type);
               })
               /* The thumbnail is a nicety. If it fails, the main image is
                  already stored and usable — better a heavier grid than a

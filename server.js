@@ -278,7 +278,7 @@ const UPLOAD_MAX_BYTES = 3 * 1024 * 1024;
 const UPLOAD_DIR_MAX_BYTES = 300 * 1024 * 1024;
 const UPLOAD_WINDOW_MS = 60 * 60 * 1000;
 const UPLOAD_MAX_PER_WINDOW = 60;
-const NAME_RE = /^[a-f0-9]{16}(-480)?\.webp$/;
+const NAME_RE = /^[a-f0-9]{16}(-480)?\.(webp|jpg)$/;
 const ID_RE = /^[a-f0-9]{16}$/;
 
 const uploadRate = new Map();
@@ -294,12 +294,29 @@ function noteUpload(user) {
   else a.n += 1;
 }
 
-/* A WebP file starts with "RIFF", then four bytes of length, then "WEBP".
-   Checked instead of trusting Content-Type, which the caller picks freely. */
-function isWebp(buf) {
-  return buf.length > 12 &&
-    buf.toString("latin1", 0, 4) === "RIFF" &&
-    buf.toString("latin1", 8, 12) === "WEBP";
+/* Which format actually arrived, decided by the first bytes of the file and
+   not by Content-Type, which the caller picks freely.
+
+   WebP is what the browser produces where it can encode it — it is the
+   smallest. JPEG is the fallback: Safari, depending on version, cannot encode
+   WebP from a canvas and silently returns something else instead, so insisting
+   on WebP would leave those uploads broken. Both formats are ones a browser
+   displays without help, and neither is executable. */
+function detectFormat(buf) {
+  if (buf.length > 12 &&
+      buf.toString("latin1", 0, 4) === "RIFF" &&
+      buf.toString("latin1", 8, 12) === "WEBP") {
+    return { ext: "webp", type: "image/webp" };
+  }
+  if (buf.length > 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) {
+    return { ext: "jpg", type: "image/jpeg" };
+  }
+  return null;
+}
+
+/* Both sizes of one image, whatever extension they were stored under. */
+function uploadNames(id) {
+  return uploadFiles().filter(f => f.slice(0, 16) === id);
 }
 
 function uploadFiles() {
@@ -320,7 +337,10 @@ function uploadList() {
   const files = uploadFiles();
   return files.filter(f => !f.includes("-480")).map(f => {
     const id = f.slice(0, 16);
-    const thumbName = `${id}-480.webp`;
+    /* The thumbnail may carry a different extension than the main image only
+       if the two were produced by different browsers; look it up rather than
+       assuming one. */
+    const thumbName = files.find(x => x.startsWith(`${id}-480.`));
     let bytes = 0, mtime = 0;
     try {
       const st = fs.statSync(path.join(UPLOAD_DIR, f));
@@ -329,7 +349,7 @@ function uploadList() {
     return {
       id,
       src: `/media/${f}`,
-      thumb: files.includes(thumbName) ? `/media/${thumbName}` : `/media/${f}`,
+      thumb: thumbName ? `/media/${thumbName}` : `/media/${f}`,
       bytes,
       mtime
     };
@@ -661,7 +681,7 @@ const server = http.createServer(async (req, res) => {
       if (variant === "thumb") {
         id = q.get("id") || "";
         if (!ID_RE.test(id)) return json(res, 400, { error: "Invalid image id." });
-        if (!fs.existsSync(path.join(UPLOAD_DIR, `${id}.webp`))) {
+        if (!uploadNames(id).some(f => !f.includes("-480"))) {
           return json(res, 400, { error: "The main image for this thumbnail is missing." });
         }
       } else {
@@ -672,12 +692,31 @@ const server = http.createServer(async (req, res) => {
         return json(res, 507, { error: "The image store is full. Please delete old images." });
       }
 
-      const buf = await readBody(req, UPLOAD_MAX_BYTES);
-      if (!isWebp(buf)) {
-        return json(res, 415, { error: "WebP images only. The upload normally converts by itself." });
+      /* Caught here rather than in the generic handler, so the answer names
+         the real limit instead of a bare "request too large". */
+      let buf;
+      try {
+        buf = await readBody(req, UPLOAD_MAX_BYTES);
+      } catch (err) {
+        if (err && err.tooLarge) {
+          return json(res, 413, {
+            error: `The image is still larger than ${Math.round(UPLOAD_MAX_BYTES / 1024 / 1024)} MB after conversion. ` +
+                   "Normally the browser scales it down first — if this keeps happening, " +
+                   "the browser could not convert the file and sent the original."
+          });
+        }
+        throw err;
       }
 
-      const name = variant === "thumb" ? `${id}-480.webp` : `${id}.webp`;
+      const format = detectFormat(buf);
+      if (!format) {
+        return json(res, 415, {
+          error: "Only WebP or JPEG images. The upload converts the file itself — " +
+                 "if this appears, the browser sent something else."
+        });
+      }
+
+      const name = variant === "thumb" ? `${id}-480.${format.ext}` : `${id}.${format.ext}`;
       const dest = path.join(UPLOAD_DIR, name);
       const tmp = dest + ".tmp";
       /* Writing is the one step that fails for reasons outside this process:
