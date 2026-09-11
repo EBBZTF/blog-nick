@@ -7,7 +7,9 @@ window.SITE_CONTENT = {
     "name": "NICK BERDI",
     "tag": "E30",
     "footerBrand": "NICK BERDI · E30",
-    "footerText": "Junioren-Motorsport, Thurgau. Bergrennen und Rallye mit einem BMW E30 von 1990."
+    "footerText": "Junioren-Motorsport, Thurgau. Bergrennen und Rallye mit einem BMW E30 von 1990.",
+    "instagram": "https://www.instagram.com/nick_berdi/",
+    "youtube": "https://www.youtube.com/@nick_berdi"
   },
   "index": {
     "heroTitle": "Nick Berdi",

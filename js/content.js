@@ -60,6 +60,15 @@
     if (pic) applyImage(node, pic, node.getAttribute("alt"));
   });
 
+  /* ---- link targets ---- */
+  /* Only the address is taken from the content, never the link text: a footer
+     entry keeps reading "Instagram" even if the account moves. An empty value
+     leaves the address written in the HTML in place, like everywhere else. */
+  each("[data-cms-href]", function (node) {
+    var v = get(node.getAttribute("data-cms-href"));
+    if (typeof v === "string" && v.trim()) node.href = v.trim();
+  });
+
   /* ---- longer text, split into paragraphs ---- */
   /* Like data-cms, except a blank line starts a new paragraph. For fields where
      someone writes more than a sentence — the about page, where the fallback in

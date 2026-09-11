@@ -20,7 +20,9 @@
       { k: "name",        label: "Name in the navigation" },
       { k: "tag",         label: "Short tag next to the name" },
       { k: "footerBrand", label: "Name in the footer" },
-      { k: "footerText",  label: "Footer text", type: "area" }
+      { k: "footerText",  label: "Footer text", type: "area" },
+      { k: "instagram",   label: "Instagram address", half: true, sub: "link in the footer" },
+      { k: "youtube",     label: "YouTube address", half: true, sub: "link in the footer" }
     ]},
 
     { id: "index", title: "Home page", hint: "Title, intro text and the \u201cnext start\u201d strip. Leaving a field empty means: not decided yet.", key: "index", fields: [

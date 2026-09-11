@@ -126,6 +126,15 @@ paragraphs without any markup:
 </div>
 ```
 
+Link targets use `data-cms-href`. Only the address comes from the content, never
+the link text — the footer entry keeps reading "Instagram" even if the account
+moves:
+
+```html
+<a href="https://www.instagram.com/nick_berdi/" data-cms-href="site.instagram"
+   target="_blank" rel="noopener">Instagram</a>
+```
+
 Adding a new field: put `data-cms="…"` in the HTML, add the key to
 `data/content.js`, and enter it in the `SCHEMA` catalogue at the top of
 `js/admin.js` — the form builds itself from that.
