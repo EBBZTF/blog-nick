@@ -28,9 +28,14 @@
 
   /* createImageBitmap is the short path. Safari before 17 does not have it for
      files, so fall back to an <img> with an object URL. */
+  /* imageOrientation matters: a phone writes the picture in sensor order and
+     records "turn this" in the EXIF data. Without the option some browsers
+     hand back the unrotated bitmap and portrait photos end up sideways. */
   function decode(file) {
     if (global.createImageBitmap) {
-      return global.createImageBitmap(file).catch(function () { return viaImgTag(file); });
+      return global.createImageBitmap(file, { imageOrientation: "from-image" })
+        .catch(function () { return global.createImageBitmap(file); })
+        .catch(function () { return viaImgTag(file); });
     }
     return viaImgTag(file);
   }
@@ -139,7 +144,9 @@
                   src: res.src,
                   thumb: thumbRes ? thumbRes.src : res.src,
                   w: main.w,
-                  h: main.h
+                  h: main.h,
+                  bytes: res.bytes,
+                  format: main.type
                 };
               });
           });
@@ -265,9 +272,13 @@
     function upload(file) {
       busy(true, "Scaling down and uploading \u2026");
       Upload.image(file).then(function (pic) {
+        var info = pic.w + " × " + pic.h + " px · " +
+                   Math.max(1, Math.round((pic.bytes || 0) / 1024)) + " KB · " +
+                   String(pic.format || "").replace("image/", "").toUpperCase();
+        delete pic.bytes; delete pic.format;   /* not part of the content */
         pic.alt = altBox.value;
         apply(pic);
-        busy(false, "");
+        busy(false, info);
       }, function (err) {
         busy(false, err.message);
         note.classList.add("bad");

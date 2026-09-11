@@ -86,6 +86,15 @@ users — on `kontakt.html` before `js/contact.js`, on `admin.html` before
 There is no JavaScript inside the HTML files. New behaviour goes into a file
 under `js/`, not into a `<script>` on the page.
 
+The `?v=` on the stylesheet and script URLs is a cache breaker. Scripts and
+stylesheets are served with `no-cache` plus an ETag, so a browser revalidates
+them on every use and a deploy arrives immediately. That was not always the
+case: they used to carry `max-age=3600`, and a copy stored under that rule stays
+"fresh" for an hour without the browser ever asking — so a fixed script kept
+failing with the previous code. Raising the number gives the files new URLs and
+forces every browser to fetch them once. It is only needed to break out of
+copies stored under the old rule; day to day the ETag does the work.
+
 ## How the content reaches the page
 
 The default text sits in the HTML directly and carries a marker:
@@ -132,6 +141,11 @@ straight onto the field.
 to at most 2000 px on the long edge, plus a 480 px thumbnail. That way the Pi
 needs no image library, has nothing to compute, and a 4 MB phone photo becomes a
 few hundred KB. Smaller images are never scaled up.
+
+Re-encoding also strips the EXIF block, and with it the GPS coordinates a phone
+writes into a photo — worth knowing, since the pictures end up on a public page.
+The orientation stored there is applied first (`imageOrientation: "from-image"`),
+so a portrait phone photo does not end up sideways.
 
 WebP is preferred, JPEG is the fallback. The format cannot simply be requested:
 a browser that cannot *encode* WebP from a canvas — Safari, depending on
