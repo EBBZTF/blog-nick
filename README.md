@@ -129,9 +129,17 @@ from the **media library**, or remove the image. A file can also be dragged
 straight onto the field.
 
 **Scaling happens in the browser** before anything is uploaded (`js/upload.js`):
-to at most 2000 px on the long edge, as WebP, plus a 480 px thumbnail. That way
-the Pi needs no image library, has nothing to compute, and a 4 MB phone photo
-becomes roughly 200 KB. Smaller images are never scaled up.
+to at most 2000 px on the long edge, plus a 480 px thumbnail. That way the Pi
+needs no image library, has nothing to compute, and a 4 MB phone photo becomes a
+few hundred KB. Smaller images are never scaled up.
+
+WebP is preferred, JPEG is the fallback. The format cannot simply be requested:
+a browser that cannot *encode* WebP from a canvas — Safari, depending on
+version — ignores the argument and silently returns a PNG instead of failing.
+A 2000 px photo as PNG is several megabytes, which then hit the size limit and
+looked to the user like “the picture is too big”. So `js/upload.js` checks what
+the canvas actually produced, falls back to JPEG, and steps the quality down
+until the file fits.
 
 Files are stored in `data/uploads/` and delivered under `/media/`. Two reasons
 for the split: `data/` is the only directory the service may write to
@@ -139,9 +147,10 @@ for the split: `data/` is the only directory the service may write to
 public except `content.js`” stays intact. The file name is generated from random
 bytes on the server — the name coming from the browser is never used.
 
-On every upload the server checks the **magic bytes** (`RIFF…WEBP`) rather than
-the Content-Type that was sent along, and limits to 3 MB per image and 300 MB
-for the whole directory. Because an image never changes under its name, it is
+On every upload the server checks the **magic bytes** (`RIFF…WEBP` for WebP,
+`FF D8 FF` for JPEG) rather than the Content-Type that was sent along, names the
+file after the format it actually detected, and limits to 3 MB per image and
+300 MB for the whole directory. Because an image never changes under its name, it is
 delivered with `max-age=31536000, immutable`.
 
 Where a thumbnail exists, `js/content.js` offers both sizes via `srcset`. That

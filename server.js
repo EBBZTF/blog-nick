@@ -531,7 +531,7 @@ function serveStatic(req, res) {
   if (urlPath.startsWith("/media/")) {
     const name = urlPath.slice("/media/".length);
     if (!NAME_RE.test(name)) { res.writeHead(404, headers({})); res.end("Not found"); return; }
-    return sendFile(res, path.join(UPLOAD_DIR, name));
+    return sendFile(req, res, path.join(UPLOAD_DIR, name));
   }
 
   if (isBlocked(urlPath)) { res.writeHead(404, headers({})); res.end("Not found"); return; }
@@ -539,10 +539,10 @@ function serveStatic(req, res) {
   const file = path.join(ROOT, urlPath);
   if (!file.startsWith(ROOT + path.sep)) { res.writeHead(403, headers({})); res.end("Forbidden"); return; }
 
-  sendFile(res, file);
+  sendFile(req, res, file);
 }
 
-function sendFile(res, file) {
+function sendFile(req, res, file) {
   fs.stat(file, (err, st) => {
     if (err || !st.isFile()) {
       res.writeHead(404, headers({ "Content-Type": "text/html; charset=utf-8" }));
@@ -554,26 +554,40 @@ function sendFile(res, file) {
        at upload time, and a replacement gets a new name. So it can be cached
        for a long time and immutably. */
     const isUpload = file.startsWith(UPLOAD_DIR + path.sep);
-    let cache;
-    if (isContent) {
-      /* content.js is the one file that must never be stale: the moment it is
-         saved, every page has to show the new text. "no-cache" was too weak —
-         it permits storing and only asks for revalidation, and since nothing
-         here sends an ETag there is nothing to revalidate against, so a CDN
-         that caches .js by extension could keep handing out the old version.
-         "no-store" forbids keeping a copy at all, at the edge and in the
-         browser. The file is a few kilobytes, so this costs nothing. */
-      cache = "no-store, must-revalidate";
-    }
-    else if (type.startsWith("text/html")) cache = "no-cache";
-    else if (isUpload) cache = "public, max-age=31536000, immutable";
-    else cache = "public, max-age=3600";
 
-    res.writeHead(200, headers({
+    /* Everything else is served under a name that stays the same while the
+       content behind it changes — there is no build step putting a hash in the
+       file name. A plain max-age was therefore wrong: after a deploy a browser
+       kept the old script for up to an hour and there was no way to ask. It
+       cost real debugging time, because a fixed upload still failed with the
+       previous code.
+
+       "no-cache" does not mean "do not store": the copy is kept and revalidated
+       on each use. With an ETag that costs one 304 with no body, so it stays
+       nearly as cheap as a cache hit while never being stale. */
+    const etag = '"' + st.size.toString(16) + "-" + Math.floor(st.mtimeMs).toString(16) + '"';
+
+    let cache;
+    if (isContent) cache = "no-store, must-revalidate";
+    else if (isUpload) cache = "public, max-age=31536000, immutable";
+    else cache = "no-cache";
+
+    const base = {
       "Content-Type": type,
-      "Content-Length": st.size,
-      "Cache-Control": cache
-    }));
+      "Cache-Control": cache,
+      "Last-Modified": new Date(st.mtimeMs).toUTCString()
+    };
+    if (!isContent) base.ETag = etag;
+
+    /* Unchanged since the browser last asked: answer without a body. */
+    const known = req.headers["if-none-match"];
+    if (!isContent && known && known === etag) {
+      res.writeHead(304, headers(base));
+      res.end();
+      return;
+    }
+
+    res.writeHead(200, headers(Object.assign({ "Content-Length": st.size }, base)));
     fs.createReadStream(file).pipe(res);
   });
 }
