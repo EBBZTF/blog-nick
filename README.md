@@ -210,14 +210,14 @@ Filter chips carry their code in `data-filter`, the filtered elements in
 
 ## Language in the code
 
-Identifiers, comments, this documentation, the keys in `data/content.js`, the log
-and command-line output of the server and the whole admin area are **English**.
+Identifiers, comments, this documentation, the keys in `data/content.js` and the
+log and command-line output of the server are **English**.
 
-German is only what a visitor of the finished website reads: the page content
-itself, plus the answers of `/api/contact` and the static 404 page, because those
-appear on the site. `js/api.js` therefore carries English messages and
-`js/contact.js` assembles the German sentence for the visitor itself, instead of
-passing an English one through.
+**Everything a person reads is German** — the pages themselves, and the admin
+area, which Nick and Karin work in: field labels, hints, buttons, messages and
+the answers of every `/api/*` endpoint. The admin area was briefly English; it
+was switched back, because the people using it work in German and the tool
+should not be the one place that isn't.
 
 The page file names stay German (`das-auto.html`, `galerie.html`,
 `sponsorflaechen.html` …) — those are public addresses, and renaming them would

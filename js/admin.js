@@ -16,202 +16,202 @@
   /* ============================ Field catalogue ========================== */
   /* Add new fields here — the form builds itself from this.               */
   var SCHEMA = [
-    { id: "site", title: "General", hint: "Appears in the navigation and in the footer of every page.", key: "site", fields: [
-      { k: "name",        label: "Name in the navigation" },
-      { k: "tag",         label: "Short tag next to the name" },
-      { k: "footerBrand", label: "Name in the footer" },
-      { k: "footerText",  label: "Footer text", type: "area" },
-      { k: "instagram",   label: "Instagram address", half: true, sub: "link in the footer" },
-      { k: "youtube",     label: "YouTube address", half: true, sub: "link in the footer" }
+    { id: "site", title: "Allgemein", hint: "Erscheint in der Navigation und im Fuss jeder Seite.", key: "site", fields: [
+      { k: "name",        label: "Name in der Navigation" },
+      { k: "tag",         label: "Kürzel neben dem Namen" },
+      { k: "footerBrand", label: "Name im Seitenfuss" },
+      { k: "footerText",  label: "Text im Seitenfuss", type: "area" },
+      { k: "instagram",   label: "Instagram-Adresse", half: true, sub: "Link im Seitenfuss" },
+      { k: "youtube",     label: "YouTube-Adresse", half: true, sub: "Link im Seitenfuss" }
     ]},
 
-    { id: "index", title: "Home page", hint: "Title, intro text and the \u201cnext start\u201d strip. Leaving a field empty means: not decided yet.", key: "index", fields: [
-      { k: "heroTitle", label: "Title" },
-      { k: "heroSub",   label: "Subtitle" },
-      { k: "heroText",  label: "Intro text", type: "area" },
-      { k: "heroImage", label: "Large image at the top", type: "image" },
-      { k: "heroBtn1",  label: "Button 1", half: true },
-      { k: "heroBtn2",  label: "Button 2", half: true },
-      { k: "nextEvent",      label: "Next start — event", half: true, sub: "\u2014 means: still open" },
-      { k: "nextDate",       label: "Next start — date", half: true },
-      { k: "nextDiscipline", label: "Next start — discipline", half: true },
-      { k: "nextSeries",     label: "Next start — series", half: true },
-      { k: "nextStanding",   label: "Next start — standing" },
-      { k: "lastTitle", label: "Last outing — title" },
-      { k: "lastText",  label: "Last outing — text", type: "area" },
-      { k: "partnersTitle", label: "Partner section — title" },
-      { k: "partnersIntro", label: "Partner section — text", type: "area" }
+    { id: "index", title: "Startseite", hint: "Titel, Einstiegstext und die Leiste \u201eN\u00e4chster Start\u201c. Leer lassen heisst: noch nicht festgelegt.", key: "index", fields: [
+      { k: "heroTitle", label: "Titel" },
+      { k: "heroSub",   label: "Untertitel" },
+      { k: "heroText",  label: "Einstiegstext", type: "area" },
+      { k: "heroImage", label: "Grosses Bild oben", type: "image" },
+      { k: "heroBtn1",  label: "Knopf 1", half: true },
+      { k: "heroBtn2",  label: "Knopf 2", half: true },
+      { k: "nextEvent",      label: "N\u00e4chster Start — Veranstaltung", half: true, sub: "\u2014 bedeutet: noch offen" },
+      { k: "nextDate",       label: "Nächster Start — Datum", half: true },
+      { k: "nextDiscipline", label: "Nächster Start — Disziplin", half: true },
+      { k: "nextSeries",     label: "Nächster Start — Serie", half: true },
+      { k: "nextStanding",   label: "Nächster Start — Zwischenstand" },
+      { k: "lastTitle", label: "Letzter Einsatz — Titel" },
+      { k: "lastText",  label: "Letzter Einsatz — Text", type: "area" },
+      { k: "partnersTitle", label: "Partner-Abschnitt — Titel" },
+      { k: "partnersIntro", label: "Partner-Abschnitt — Text", type: "area" }
     ]},
 
     /* The three long texts are plain textareas: a blank line becomes a new
        paragraph when the page is rendered (data-cms-para in js/content.js), so
        there is nothing to learn and no markup to get wrong. */
-    { id: "about", title: "About me", hint: "The page ueber-mich.html — Nick writes here himself. A blank line in the long texts starts a new paragraph.", key: "about", fields: [
-      { k: "title",     label: "Name / title" },
-      { k: "sub",       label: "Line under the name" },
-      { k: "intro",     label: "Short intro next to the photo", type: "area" },
-      { k: "heroImage", label: "Photo", type: "image" },
-      { k: "factBorn",        label: "Year of birth", half: true },
-      { k: "factHome",        label: "Home", half: true },
-      { k: "factDisciplines", label: "Disciplines", half: true },
-      { k: "factLicence",     label: "Licence", half: true, sub: "— means: still open" },
-      { k: "motivationTitle", label: "Section 1 — heading" },
-      { k: "motivation",      label: "Section 1 — text", type: "area", rows: 8, sub: "Blank line = new paragraph" },
-      { k: "startTitle",      label: "Section 2 — heading" },
-      { k: "start",           label: "Section 2 — text", type: "area", rows: 8, sub: "Blank line = new paragraph" },
-      { k: "goalsTitle",      label: "Section 3 — heading" },
-      { k: "goals",           label: "Section 3 — text", type: "area", rows: 8, sub: "Blank line = new paragraph" },
-      { k: "ctaTitle",   label: "Closing box — heading" },
-      { k: "ctaText",    label: "Closing box — text", type: "area" },
-      { k: "ctaBtn1",    label: "Closing box — button 1", half: true },
-      { k: "ctaBtn2",    label: "Closing box — button 2", half: true }
+    { id: "about", title: "\u00dcber mich", hint: "Die Seite ueber-mich.html — hier schreibt Nick selbst. Eine Leerzeile in den langen Texten beginnt einen neuen Absatz.", key: "about", fields: [
+      { k: "title",     label: "Name / Titel" },
+      { k: "sub",       label: "Zeile unter dem Namen" },
+      { k: "intro",     label: "Kurzer Einstieg neben dem Foto", type: "area" },
+      { k: "heroImage", label: "Foto", type: "image" },
+      { k: "factBorn",        label: "Jahrgang", half: true },
+      { k: "factHome",        label: "Wohnort", half: true },
+      { k: "factDisciplines", label: "Disziplinen", half: true },
+      { k: "factLicence",     label: "Lizenz", half: true, sub: "— bedeutet: noch offen" },
+      { k: "motivationTitle", label: "Abschnitt 1 — Titel" },
+      { k: "motivation",      label: "Abschnitt 1 — Text", type: "area", rows: 8, sub: "Leerzeile = neuer Absatz" },
+      { k: "startTitle",      label: "Abschnitt 2 — Titel" },
+      { k: "start",           label: "Abschnitt 2 — Text", type: "area", rows: 8, sub: "Leerzeile = neuer Absatz" },
+      { k: "goalsTitle",      label: "Abschnitt 3 — Titel" },
+      { k: "goals",           label: "Abschnitt 3 — Text", type: "area", rows: 8, sub: "Leerzeile = neuer Absatz" },
+      { k: "ctaTitle",   label: "Schlussbox — Titel" },
+      { k: "ctaText",    label: "Schlussbox — Text", type: "area" },
+      { k: "ctaBtn1",    label: "Schlussbox — Knopf 1", half: true },
+      { k: "ctaBtn2",    label: "Schlussbox — Knopf 2", half: true }
     ]},
 
-    { id: "car", title: "Spec sheet", hint: "The technical figures. Weight and disciplines also appear on the home page.", key: "car", fields: [
-      { k: "engine",      label: "Engine (home page)", half: true },
-      { k: "drivetrain",  label: "Drivetrain", half: true },
-      { k: "weight",      label: "Weight (home page)", half: true },
-      { k: "disciplines", label: "Disciplines", half: true },
-      { k: "chassis",     label: "Chassis", half: true },
-      { k: "engineLong",  label: "Engine (spec sheet)", half: true },
-      { k: "power",       label: "Power", half: true },
-      { k: "gearbox",     label: "Gearbox", half: true },
-      { k: "weightLong",  label: "Weight (spec sheet)", half: true },
-      { k: "wheels",      label: "Wheels", half: true },
-      { k: "safety",      label: "Safety", half: true },
-      { k: "paint",       label: "Paint", half: true }
+    { id: "car", title: "Datenblatt", hint: "Die technischen Werte. Gewicht und Disziplinen erscheinen auch auf der Startseite.", key: "car", fields: [
+      { k: "engine",      label: "Motor (Startseite)", half: true },
+      { k: "drivetrain",  label: "Antrieb", half: true },
+      { k: "weight",      label: "Gewicht (Startseite)", half: true },
+      { k: "disciplines", label: "Disziplinen", half: true },
+      { k: "chassis",     label: "Fahrgestell", half: true },
+      { k: "engineLong",  label: "Motor (Datenblatt)", half: true },
+      { k: "power",       label: "Leistung", half: true },
+      { k: "gearbox",     label: "Getriebe", half: true },
+      { k: "weightLong",  label: "Gewicht (Datenblatt)", half: true },
+      { k: "wheels",      label: "Räder", half: true },
+      { k: "safety",      label: "Sicherheit", half: true },
+      { k: "paint",       label: "Lack", half: true }
     ]},
 
-    { id: "carPage", title: "\u201cThe car\u201d page", key: "carPage", fields: [
-      { k: "title",       label: "Title" },
-      { k: "intro",       label: "Intro text", type: "area" },
-      { k: "heroImage",   label: "Large image at the top", type: "image" },
-      { k: "setupsTitle", label: "Title of the section with the two tiles" },
-      { k: "rallyTitle",  label: "Rally tile — title" },
-      { k: "rallyText",   label: "Rally tile — text", type: "area" },
-      { k: "hillTitle",   label: "Hillclimb tile — title" },
-      { k: "hillText",    label: "Hillclimb tile — text", type: "area" },
-      { k: "image1",      label: "Image 1 of the three tiles", type: "image" },
-      { k: "caption1",    label: "Caption 1" },
-      { k: "image2",      label: "Image 2 of the three tiles", type: "image" },
-      { k: "caption2",    label: "Caption 2" },
-      { k: "image3",      label: "Image 3 of the three tiles", type: "image" },
-      { k: "caption3",    label: "Caption 3" }
+    { id: "carPage", title: "Seite \u201eDas Auto\u201c", key: "carPage", fields: [
+      { k: "title",       label: "Titel" },
+      { k: "intro",       label: "Einstiegstext", type: "area" },
+      { k: "heroImage",   label: "Grosses Bild oben", type: "image" },
+      { k: "setupsTitle", label: "Titel des Abschnitts mit den zwei Kacheln" },
+      { k: "rallyTitle",  label: "Kachel Rallye — Titel" },
+      { k: "rallyText",   label: "Kachel Rallye — Text", type: "area" },
+      { k: "hillTitle",   label: "Kachel Bergrennen — Titel" },
+      { k: "hillText",    label: "Kachel Bergrennen — Text", type: "area" },
+      { k: "image1",      label: "Bild 1 der drei Kacheln", type: "image" },
+      { k: "caption1",    label: "Bildunterschrift 1" },
+      { k: "image2",      label: "Bild 2 der drei Kacheln", type: "image" },
+      { k: "caption2",    label: "Bildunterschrift 2" },
+      { k: "image3",      label: "Bild 3 der drei Kacheln", type: "image" },
+      { k: "caption3",    label: "Bildunterschrift 3" }
     ]},
 
-    { id: "season", title: "Season", hint: "As long as no results are entered, the page shows a note instead of a table.", key: "season", fields: [
-      { k: "intro",        label: "Intro text", type: "area" },
-      { k: "statStarts",   label: "Figure: starts", half: true },
-      { k: "statPodiums",  label: "Figure: class podiums", half: true },
-      { k: "statWins",     label: "Figure: class wins", half: true },
-      { k: "historyIntro", label: "Career — intro text", type: "area" }
+    { id: "season", title: "Saison", hint: "Solange keine Resultate erfasst sind, zeigt die Seite einen Hinweis statt einer Tabelle.", key: "season", fields: [
+      { k: "intro",        label: "Einstiegstext", type: "area" },
+      { k: "statStarts",   label: "Kennzahl Starts", half: true },
+      { k: "statPodiums",  label: "Kennzahl Klassenpodeste", half: true },
+      { k: "statWins",     label: "Kennzahl Klassensiege", half: true },
+      { k: "historyIntro", label: "Werdegang — Einstiegstext", type: "area" }
     ]},
 
-    { id: "events", title: "Results", hint: "One entry per event. As soon as the first one exists, the table appears on the season page.", list: "events",
-      label: function (o) { return (o.date || "") + " " + (o.name || "New event"); },
+    { id: "events", title: "Resultate", hint: "Ein Eintrag pro Veranstaltung. Sobald der erste erfasst ist, erscheint auf der Saison-Seite die Tabelle.", list: "events",
+      label: function (o) { return (o.date || "") + " " + (o.name || "Neue Veranstaltung"); },
       item: [
-        { k: "date",        label: "Date", half: true, sub: "e.g. 07.06." },
-        { k: "name",        label: "Event", half: true },
-        { k: "discipline",  label: "Discipline", type: "select", options: DISCIPLINE_REQUIRED, half: true },
-        { k: "classRank",   label: "Class position", half: true, sub: "e.g. 1." },
-        { k: "overallRank", label: "Overall position", half: true },
-        { k: "bestTime",    label: "Best time", half: true }
+        { k: "date",        label: "Datum", half: true, sub: "z. B. 07.06." },
+        { k: "name",        label: "Veranstaltung", half: true },
+        { k: "discipline",  label: "Disziplin", type: "select", options: DISCIPLINE_REQUIRED, half: true },
+        { k: "classRank",   label: "Rang Klasse", half: true, sub: "z. B. 1." },
+        { k: "overallRank", label: "Rang gesamt", half: true },
+        { k: "bestTime",    label: "Bestzeit", half: true }
       ]},
 
-    { id: "timeline", title: "Career", hint: "Appears on the season page, most recent year at the top.", list: "timeline",
-      label: function (o) { return (o.year || "") + " — " + (o.title || "New entry"); },
+    { id: "timeline", title: "Werdegang", hint: "Erscheint auf der Saison-Seite, neuestes Jahr zuoberst.", list: "timeline",
+      label: function (o) { return (o.year || "") + " — " + (o.title || "Neuer Eintrag"); },
       item: [
-        { k: "year",  label: "Year", half: true },
-        { k: "title", label: "Title", half: true },
+        { k: "year",  label: "Jahr", half: true },
+        { k: "title", label: "Titel", half: true },
         { k: "text",  label: "Text", type: "area" }
       ]},
 
-    { id: "partner", title: "\u201cPartner\u201d page", key: "partner", fields: [
-      { k: "heroTitle", label: "Title" },
-      { k: "heroText",  label: "Intro text", type: "area" },
-      { k: "heroImage", label: "Image at the top right", type: "image" },
-      { k: "kpiRaceDays",    label: "Race days per season", half: true, sub: "\u2014 means: still open" },
-      { k: "kpiDisciplines", label: "Disciplines", half: true },
+    { id: "partner", title: "Seite \u201ePartner\u201c", key: "partner", fields: [
+      { k: "heroTitle", label: "Titel" },
+      { k: "heroText",  label: "Einstiegstext", type: "area" },
+      { k: "heroImage", label: "Bild oben rechts", type: "image" },
+      { k: "kpiRaceDays",    label: "Renntage pro Saison", half: true, sub: "\u2014 bedeutet: noch offen" },
+      { k: "kpiDisciplines", label: "Disziplinen", half: true },
       { k: "kpiInstagram",   label: "Instagram", half: true },
-      { k: "kpiReels",       label: "Avg. reel views", half: true },
-      { k: "kpiPress",       label: "Press mentions", half: true },
-      { k: "pkgTitle",     label: "Packages — title" },
-      { k: "pkgIntro",     label: "Packages — intro text", type: "area" },
-      { k: "pkgNote",      label: "Packages — note below", type: "area" },
-      { k: "currentIntro", label: "Current partners — text", type: "area" }
+      { k: "kpiReels",       label: "Ø Reel-Aufrufe", half: true },
+      { k: "kpiPress",       label: "Pressebeiträge", half: true },
+      { k: "pkgTitle",     label: "Pakete — Titel" },
+      { k: "pkgIntro",     label: "Pakete — Einstiegstext", type: "area" },
+      { k: "pkgNote",      label: "Pakete — Hinweis darunter", type: "area" },
+      { k: "currentIntro", label: "Aktuelle Partner — Text", type: "area" }
     ]},
 
-    { id: "packages", title: "Sponsoring packages", hint: "Order here = order on the page. The highlighted package stands out visually.", list: "packages",
-      label: function (o) { return o.title || "New package"; },
+    { id: "packages", title: "Sponsoring-Pakete", hint: "Reihenfolge = Reihenfolge auf der Seite. Das hervorgehobene Paket steht optisch im Vordergrund.", list: "packages",
+      label: function (o) { return o.title || "Neues Paket"; },
       item: [
-        { k: "title", label: "Title", half: true },
-        { k: "kind",  label: "Kind", half: true, sub: "e.g. goods or services" },
-        { k: "price", label: "Price" },
-        { k: "items", label: "What is included", type: "lines", sub: "One line per point" },
-        { k: "lead",  label: "Show as highlighted", type: "check" }
+        { k: "title", label: "Titel", half: true },
+        { k: "kind",  label: "Art", half: true, sub: "z. B. Sachleistung" },
+        { k: "price", label: "Preis" },
+        { k: "items", label: "Leistungen", type: "lines", sub: "Eine Zeile pro Punkt" },
+        { k: "lead",  label: "Hervorgehoben darstellen", type: "check" }
       ]},
 
-    { id: "partners", title: "Partner logos", hint: "\u201cSurface still free\u201d draws the box in gold instead of grey.", list: "partners",
-      label: function (o) { return o.name || "New partner"; },
+    { id: "partners", title: "Partner-Logos", hint: "\u201eFl\u00e4che noch frei\u201c zeichnet das Feld gold statt grau.", list: "partners",
+      label: function (o) { return o.name || "Neuer Partner"; },
       item: [
         { k: "name", label: "Name" },
         { k: "logo", label: "Logo", type: "image" },
-        { k: "free", label: "Surface still free", type: "check" }
+        { k: "free", label: "Fläche noch frei", type: "check" }
       ]},
 
-    { id: "spots", title: "Free surfaces", hint: "Ticked means: the surface is taken and is drawn grey instead of gold in the diagram.", key: "spots", fields: [
-      { k: "intro", label: "Intro text", type: "area" },
-      { k: "s1", label: "1 · Front wing is taken", type: "check" },
-      { k: "s2", label: "2 · Front door is taken", type: "check" },
-      { k: "s3", label: "3 · Rear quarter panel is taken", type: "check" },
-      { k: "s4", label: "4 · Sill is taken", type: "check" },
-      { k: "s5", label: "5 · Rear side window is taken", type: "check" },
-      { k: "t1", label: "6 · Bonnet is taken", type: "check" },
-      { k: "t2", label: "7 · Roof is taken", type: "check" },
-      { k: "t3", label: "8 · Boot lid is taken", type: "check" }
+    { id: "spots", title: "Freie Fl\u00e4chen", hint: "Angekreuzt heisst: die Fl\u00e4che ist vergeben und wird auf der Grafik grau statt gold gezeichnet.", key: "spots", fields: [
+      { k: "intro", label: "Einstiegstext", type: "area" },
+      { k: "s1", label: "1 · Vorderer Kotflügel ist vergeben", type: "check" },
+      { k: "s2", label: "2 · Vordertür ist vergeben", type: "check" },
+      { k: "s3", label: "3 · Seitenteil hinten ist vergeben", type: "check" },
+      { k: "s4", label: "4 · Schweller ist vergeben", type: "check" },
+      { k: "s5", label: "5 · Seitenscheibe hinten ist vergeben", type: "check" },
+      { k: "t1", label: "6 · Motorhaube ist vergeben", type: "check" },
+      { k: "t2", label: "7 · Dach ist vergeben", type: "check" },
+      { k: "t3", label: "8 · Kofferraumdeckel ist vergeben", type: "check" }
     ]},
 
     /* No separate alt field here — the image field carries the description
        with the picture. The caption is something else and stays its own. */
-    { id: "gallery", title: "Gallery", hint: "Pick an image, set a category — the category drives the filters on the gallery page.", list: "gallery",
-      label: function (o) { return o.cap || "New image"; },
+    { id: "gallery", title: "Galerie", hint: "Bild ausw\u00e4hlen, Kategorie setzen — die Kategorie steuert die Filter auf der Galerie-Seite.", list: "gallery",
+      label: function (o) { return o.cap || "Neues Bild"; },
       item: [
-        { k: "src",     label: "Image", type: "image" },
-        { k: "cap",     label: "Caption" },
-        { k: "tag",     label: "Category", type: "select", options: GALLERY_TAGS, half: true },
-        { k: "lowCrop", label: "Car sits low in the frame (different crop)", type: "check", half: true }
+        { k: "src",     label: "Bild", type: "image" },
+        { k: "cap",     label: "Bildunterschrift" },
+        { k: "tag",     label: "Kategorie", type: "select", options: GALLERY_TAGS, half: true },
+        { k: "lowCrop", label: "Auto sitzt tief im Bild (anderer Beschnitt)", type: "check", half: true }
       ]},
 
-    { id: "journalTexts", title: "\u201cJournal\u201d page", key: "journal", fields: [
-      { k: "intro", label: "Intro text", type: "area" }
+    { id: "journalTexts", title: "Seite \u201eJournal\u201c", key: "journal", fields: [
+      { k: "intro", label: "Einstiegstext", type: "area" }
     ]},
 
-    { id: "posts", title: "Journal entries", hint: "As long as no entry exists, the page shows a note. A blank line in the text starts a new paragraph.", list: "posts",
-      label: function (o) { return o.title || "New entry"; },
+    { id: "posts", title: "Journal-Eintr\u00e4ge", hint: "Solange kein Eintrag erfasst ist, zeigt die Seite einen Hinweis. Eine Leerzeile im Text beginnt einen neuen Absatz.", list: "posts",
+      label: function (o) { return o.title || "Neuer Eintrag"; },
       item: [
-        { k: "date",       label: "Date", half: true, sub: "e.g. 9. Juni 2027" },
+        { k: "date",       label: "Date", half: true, sub: "z. B. 9. Juni 2027" },
         { k: "discipline", label: "Disziplin", type: "select", options: DISCIPLINE_OPTIONAL, half: true },
-        { k: "title",      label: "Title" },
-        { k: "image",      label: "Lead image", type: "image" },
-        { k: "text",       label: "Text", type: "area", rows: 8, sub: "Blank line = new paragraph" }
+        { k: "title",      label: "Titel" },
+        { k: "image",      label: "Titelbild", type: "image" },
+        { k: "text",       label: "Text", type: "area", rows: 8, sub: "Leerzeile = neuer Absatz" }
       ]},
 
-    { id: "galleryTexts", title: "Gallery text", key: "galleryPage", fields: [
-      { k: "intro", label: "Intro text", type: "area" }
+    { id: "galleryTexts", title: "Galerie-Text", key: "galleryPage", fields: [
+      { k: "intro", label: "Einstiegstext", type: "area" }
     ]},
 
     /* Read-only: enquiries are not content, they arrive from the form. Hence
        neither "key" nor "list" but its own panel. */
-    { id: "inquiries", title: "Enquiries", custom: "inquiries",
-      hint: "Enquiries received through the contact form. Most recent at the top." },
+    { id: "inquiries", title: "Anfragen", custom: "inquiries",
+      hint: "Eingegangene Anfragen \u00fcber das Kontaktformular. Neueste zuoberst." },
 
-    { id: "contact", title: "Contact", key: "contact", fields: [
-      { k: "intro",     label: "Intro text", type: "area" },
-      { k: "asideText", label: "Contact person — text", type: "area" },
-      { k: "mail",      label: "E-mail", half: true },
-      { k: "phone",     label: "Phone", half: true },
-      { k: "city",      label: "Town" },
-      { k: "pdfText",   label: "Text for the document download", type: "area" }
+    { id: "contact", title: "Kontakt", key: "contact", fields: [
+      { k: "intro",     label: "Einstiegstext", type: "area" },
+      { k: "asideText", label: "Ansprechperson — Text", type: "area" },
+      { k: "mail",      label: "E-Mail", half: true },
+      { k: "phone",     label: "Telefon", half: true },
+      { k: "city",      label: "Ort" },
+      { k: "pdfText",   label: "Text zum Unterlagen-Download", type: "area" }
     ]}
   ];
 
@@ -267,7 +267,7 @@
         var opt = typeof o === "string" ? { value: o, label: o } : o;
         var op = document.createElement("option");
         op.value = opt.value;
-        op.textContent = opt.label === "" ? "— none —" : opt.label;
+        op.textContent = opt.label === "" ? "— keine —" : opt.label;
         input.appendChild(op);
       });
       var current = get();
@@ -337,7 +337,7 @@
 
     var add = document.createElement("button");
     add.className = "abtn abtn-l";
-    add.textContent = "+ Add entry";
+    add.textContent = "+ Eintrag hinzufügen";
     add.addEventListener("click", function () {
       var blank = {};
       group.item.forEach(function (f) {
@@ -356,7 +356,7 @@
       if (!arr.length) {
         var e = document.createElement("div");
         e.className = "listempty";
-        e.textContent = "No entry yet.";
+        e.textContent = "Noch kein Eintrag erfasst.";
         box.appendChild(e);
         return;
       }
@@ -378,9 +378,9 @@
 
         var del = document.createElement("button");
         del.className = "abtn abtn-x";
-        del.textContent = "Delete";
+        del.textContent = "Löschen";
         del.addEventListener("click", function () {
-          if (!confirm("Really delete the entry \u201c" + group.label(obj) + "\u201d?")) return;
+          if (!confirm("Eintrag \u201e" + group.label(obj) + "\u201c wirklich l\u00f6schen?")) return;
           arr.splice(idx, 1); markDirty(); render();
         });
         head.appendChild(del);
@@ -467,7 +467,7 @@
     a.download = "content.js";
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-    toast("File downloaded — upload it to the web space as data/content.js.");
+    toast("Datei heruntergeladen — als data/content.js auf den Webspace laden.");
   }
 
   function save() {
@@ -476,12 +476,12 @@
     API.post("api/content", data)
       .then(function () {
         markClean();
-        toast("Saved. The website shows the changes right away.");
+        toast("Gespeichert. Die Website zeigt die Änderungen sofort.");
       })
       .catch(function (err) {
         /* Session expired — reloading leads back to the login form. */
         if (err.status === 401) { location.reload(); return; }
-        toast(err.message + " If needed, download the file instead.", true);
+        toast(err.message + " Notfalls die Datei herunterladen.", true);
       })
       .then(function () { $("btnSave").disabled = false; });
   }
@@ -501,9 +501,9 @@
     $("login").hidden = true;
     $("app").hidden = false;
     $("who").textContent = user
-      ? user + " · " + (mode === "server" ? "changes are saved" : "no server — download the file")
+      ? user + " · " + (mode === "server" ? "\u00c4nderungen werden gespeichert" : "ohne Server — Datei herunterladen")
       : "";
-    $("btnSave").textContent = mode === "server" ? "Save" : "Download file";
+    $("btnSave").textContent = mode === "server" ? "Speichern" : "Datei herunterladen";
     $("btnDownload").hidden = mode !== "server";
     buildUI();
     markClean();
@@ -517,7 +517,7 @@
     function withServer(s) {
       mode = "server";
       $("loginNote").textContent =
-        "Access is handed out by Karin or Emma. Once saved, the change is online immediately.";
+        "Zugang bekommt man von Karin oder Emma. Nach dem Speichern ist die \u00c4nderung sofort online.";
       /* Already logged in on the server side — straight on. */
       if (s && s.user) loadContentThen(function () { showApp(s.user); });
     }
@@ -527,8 +527,8 @@
          server. */
       mode = "offline";
       $("loginNote").textContent =
-        "No server detected. The sign-in here only guards against a stray click; " +
-        "saving means downloading the file and uploading it as data/content.js.";
+        "Kein Server erkannt. Die Anmeldung ist hier nur ein Schutz gegen Verklicken; " +
+        "gespeichert wird, indem die Datei heruntergeladen und als data/content.js hochgeladen wird.";
     }
   }
 
@@ -538,7 +538,7 @@
     $("loginErr").textContent = "";
 
     if (mode !== "server") {
-      if (pass.length < 4) { $("loginErr").textContent = "Enter a password."; return; }
+      if (pass.length < 4) { $("loginErr").textContent = "Passwort eingeben."; return; }
       showApp(user || "offline");
       return;
     }
@@ -556,7 +556,7 @@
   $("btnSave").addEventListener("click", save);
   $("btnDownload").addEventListener("click", download);
   $("btnLogout").addEventListener("click", function () {
-    if (dirty && !confirm("There are unsaved changes. Sign out anyway?")) return;
+    if (dirty && !confirm("Es gibt ungespeicherte \u00c4nderungen. Trotzdem abmelden?")) return;
     if (mode !== "server") { location.reload(); return; }
     /* Reload even if logging out fails: the session in the browser is gone
        either way. */
@@ -596,7 +596,7 @@
     if (mode !== "server") {
       var offline = document.createElement("div");
       offline.className = "listempty";
-      offline.textContent = "Enquiries are only available with the server running.";
+      offline.textContent = "Anfragen gibt es nur mit laufendem Server.";
       panel.appendChild(offline);
       return;
     }
@@ -605,7 +605,7 @@
     actions.className = "inq-actions";
     var markRead = document.createElement("button");
     markRead.className = "abtn abtn-l";
-    markRead.textContent = "Mark all as read";
+    markRead.textContent = "Alle als gelesen markieren";
     markRead.disabled = true;
     actions.appendChild(markRead);
     panel.appendChild(actions);
@@ -621,7 +621,7 @@
     load();
 
     function load() {
-      box.textContent = "Loading …";
+      box.textContent = "Wird geladen …";
       API.get("api/inquiries").then(function (res) {
         render(res.items || []);
         setBadge(res.unread || 0);
@@ -653,7 +653,7 @@
       if (!items.length) {
         var empty = document.createElement("div");
         empty.className = "listempty";
-        empty.textContent = "No enquiry received yet.";
+        empty.textContent = "Noch keine Anfrage eingegangen.";
         box.appendChild(empty);
         return;
       }
@@ -677,16 +677,16 @@
       card.appendChild(head);
 
       var subject = inquiryValue(entry, "subject");
-      if (subject) card.appendChild(line("Subject", subject));
+      if (subject) card.appendChild(line("Betreff", subject));
 
       var company = inquiryValue(entry, "company");
-      if (company) card.appendChild(line("Company", company));
+      if (company) card.appendChild(line("Firma", company));
 
       /* The address as a mailto link, so answering is one click and not a
          copy-and-paste exercise. */
       var mailRow = document.createElement("div");
       mailRow.className = "inq-line";
-      mailRow.appendChild(tagOf("E-mail"));
+      mailRow.appendChild(tagOf("E-Mail"));
       var link = document.createElement("a");
       /* The subject stays German although the rest of this area is English:
          this mail is read by the person who sent the enquiry, not by us. */
@@ -697,7 +697,7 @@
       card.appendChild(mailRow);
 
       var phone = inquiryValue(entry, "phone");
-      if (phone) card.appendChild(line("Phone", phone));
+      if (phone) card.appendChild(line("Telefon", phone));
 
       var message = inquiryValue(entry, "message");
       if (message) {
@@ -746,7 +746,7 @@
     });
     wrap.appendChild(input);
     var s = document.createElement("div");
-    s.className = "sub"; s.textContent = "e.g. img/front-pass.jpg";
+    s.className = "sub"; s.textContent = "z. B. img/front-pass.jpg";
     wrap.appendChild(s);
     return wrap;
   }

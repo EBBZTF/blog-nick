@@ -122,7 +122,7 @@
 
   function image(file) {
     if (!/^image\//.test(file.type) && !/\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name)) {
-      return Promise.reject(new Error("\u201c" + file.name + "\u201d does not look like an image."));
+      return Promise.reject(new Error("\u201e" + file.name + "\u201c sieht nicht wie ein Bild aus."));
     }
 
     return decode(file).then(function (bitmap) {
@@ -156,9 +156,9 @@
          Firefox cannot, so the message has to say what to do instead of
          reporting a generic failure. */
       throw new Error(
-        "The browser cannot read this image format (usually HEIC from an iPhone). " +
-        "On the iPhone go to Settings \u203a Camera \u203a Formats and pick " +
-        "\u201cMost Compatible\u201d, or save the image as JPEG first.");
+        "Dieses Bildformat kann der Browser nicht lesen (meist HEIC vom iPhone). " +
+        "Am iPhone unter Einstellungen \u203a Kamera \u203a Formate \u201eMaximale " +
+        "Kompatibilit\u00e4t\u201c w\u00e4hlen, oder das Bild vorher als JPEG speichern.");
     });
   }
 
@@ -212,15 +212,15 @@
     picker.hidden = true;
     wrap.appendChild(picker);
 
-    var choose = button("Choose image", function () { picker.click(); });
-    var library = button("From library", function () {
+    var choose = button("Bild wählen", function () { picker.click(); });
+    var library = button("Aus Mediathek", function () {
       Media.open(function (item) {
         measure(item.src).then(function (size) {
           apply({ src: item.src, thumb: item.thumb, w: size.w, h: size.h, alt: altBox.value });
         });
       });
     });
-    var clear = button("Remove", function () {
+    var clear = button("Entfernen", function () {
       set(null); markDirty(); paint();
     });
     buttons.appendChild(choose);
@@ -236,7 +236,7 @@
     var altWrap = document.createElement("div");
     altWrap.className = "imgfld-alt";
     var altLabel = document.createElement("label");
-    altLabel.textContent = "Image description (for screen readers)";
+    altLabel.textContent = "Bildbeschreibung (für Screenreader)";
     var altBox = document.createElement("input");
     altBox.type = "text";
     altBox.addEventListener("input", function () {
@@ -270,7 +270,7 @@
     });
 
     function upload(file) {
-      busy(true, "Scaling down and uploading \u2026");
+      busy(true, "Wird verkleinert und hochgeladen \u2026");
       Upload.image(file).then(function (pic) {
         var info = pic.w + " × " + pic.h + " px · " +
                    Math.max(1, Math.round((pic.bytes || 0) / 1024)) + " KB · " +
@@ -300,7 +300,7 @@
       var pic = toPicture(get());
       if (!pic) {
         preview.classList.add("empty");
-        preview.textContent = "no image";
+        preview.textContent = "kein Bild";
         altBox.value = "";
         clear.disabled = true;
         return;
@@ -347,10 +347,10 @@
       var head = document.createElement("div");
       head.className = "media-head";
       var title = document.createElement("b");
-      title.textContent = "Media library";
+      title.textContent = "Mediathek";
       var space = document.createElement("span");
       space.className = "media-space";
-      var shut = button("Close", close);
+      var shut = button("Schliessen", close);
       head.appendChild(title); head.appendChild(space); head.appendChild(shut);
       box.appendChild(head);
 
@@ -362,12 +362,12 @@
       document.addEventListener("keydown", onEsc);
       document.body.appendChild(overlay);
 
-      grid.textContent = "Loading \u2026";
+      grid.textContent = "Wird geladen \u2026";
       API.get("api/uploads").then(function (res) {
-        space.textContent = mb(res.bytes) + " of " + mb(res.maxBytes) + " used";
+        space.textContent = mb(res.bytes) + " von " + mb(res.maxBytes) + " belegt";
         grid.textContent = "";
         if (!res.items.length) {
-          grid.textContent = "No images uploaded yet. Add the first one with \u201cChoose image\u201d.";
+          grid.textContent = "Noch keine Bilder hochgeladen. \u00dcber \u201eBild w\u00e4hlen\u201c das erste hinzuf\u00fcgen.";
           return;
         }
         res.items.forEach(function (item) { grid.appendChild(tile(item, onPick, grid)); });
@@ -393,7 +393,7 @@
       var del = document.createElement("button");
       del.type = "button";
       del.className = "abtn abtn-x";
-      del.textContent = "Delete";
+      del.textContent = "Löschen";
       del.addEventListener("click", function () { remove(item, cell, grid); });
       foot.appendChild(size); foot.appendChild(del);
       cell.appendChild(foot);
@@ -406,8 +406,8 @@
       API.del("api/uploads/" + item.id).then(done, function (err) {
         if (err.status === 409 && err.data && err.data.inUse) {
           var where = err.data.places.slice(0, 6).join("\n");
-          if (!confirm("This image is still in use:\n\n" + where +
-                       "\n\nDelete anyway? Those places will then show no image.")) return;
+          if (!confirm("Dieses Bild wird noch verwendet:\n\n" + where +
+                       "\n\nTrotzdem l\u00f6schen? Die Stelle zeigt danach kein Bild mehr.")) return;
           API.del("api/uploads/" + item.id + "?force=1").then(done, function (e) { alert(e.message); });
           return;
         }
@@ -415,7 +415,7 @@
       });
       function done() {
         cell.remove();
-        if (!grid.children.length) grid.textContent = "No images left.";
+        if (!grid.children.length) grid.textContent = "Keine Bilder mehr vorhanden.";
       }
     }
 

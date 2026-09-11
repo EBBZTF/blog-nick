@@ -68,11 +68,9 @@
       .then(release, release);
   });
 
-  /* The messages in js/api.js are English, because they are written for the
-     admin area. A visitor of this page reads German, so the sentence is put
-     together here instead of passing err.message through: the server's own
-     message where there is one — those are deliberately German for this
-     endpoint — and otherwise one sentence per case. */
+  /* The server's own message is preferred where there is one, because it says
+     what is actually wrong with this enquiry. err.message from js/api.js is the
+     fallback for the cases the server never got to answer at all. */
   function visitorText(err) {
     if (err.data && err.data.error) return err.data.error;
     if (err.offline) return "Der Server ist nicht erreichbar.";

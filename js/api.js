@@ -46,20 +46,20 @@
           /* Status 200 but no JSON — almost always a login page that got in
              between. */
           throw makeError(
-            "Unexpected answer — the sign-in has probably expired. Please reload the page.",
+            "Unerwartete Antwort — vermutlich ist die Anmeldung abgelaufen. Bitte die Seite neu laden.",
             response.status, null);
         }
         return data;
       }
       throw makeError(
-        (data && data.error) || ("The server answered with error " + response.status + "."),
+        (data && data.error) || ("Der Server hat mit Fehler " + response.status + " geantwortet."),
         response.status, data);
     });
   }
 
   function unreachable() {
     /* fetch itself failed: no network, no server, DNS error. */
-    throw makeError("The server cannot be reached.", 0, null);
+    throw makeError("Der Server ist nicht erreichbar.", 0, null);
   }
 
   function request(method, url, body) {

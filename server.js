@@ -10,10 +10,10 @@
    saving of data/content.js. Without it the site stays a perfectly ordinary
    static website.
 
-   Language: code, comments and log output are English. The only German strings
-   in this file are the answers of /api/contact and the static 404 page, because
-   those are read by a visitor of the German website. Everything the admin area
-   sees — sign-in, content, uploads, enquiries — answers in English. */
+   Language: code, comments, log output and the command line are English.
+   Everything a person reads is German — the answers of /api/contact and the
+   404 page for a visitor, and the answers to the admin area, which Nick and
+   Karin work in. */
 
 "use strict";
 
@@ -214,11 +214,22 @@ function writeSeen(ids) {
    down. */
 const https = require("https");
 
+/* Which of the three variables are missing — empty array means mail is set up. */
+function mailConfigMissing() {
+  return ["RESEND_API_KEY", "MAIL_TO", "MAIL_FROM"].filter(n => !process.env[n]);
+}
+
 function notifyByMail(entry) {
+  const missing = mailConfigMissing();
+  if (missing.length) {
+    /* Used to return silently, which looked exactly like a mail that had been
+       sent and lost on the way. Now it says so. */
+    console.warn(`[mail] not sent, configuration missing: ${missing.join(", ")}`);
+    return;
+  }
   const key = process.env.RESEND_API_KEY;
   const to = process.env.MAIL_TO;
   const from = process.env.MAIL_FROM;
-  if (!key || !to || !from) return;
 
   /* English, like the rest of the admin side: this mail goes to whoever runs
      the site, not to a visitor. The enquiry text inside it is of course
@@ -607,11 +618,11 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url === "/api/login" && req.method === "POST") {
-      if (tooManyAttempts(ip)) return json(res, 429, { error: "Too many attempts. Please try again later." });
+      if (tooManyAttempts(ip)) return json(res, 429, { error: "Zu viele Versuche. Bitte später erneut." });
       const { user, pass } = JSON.parse(await readText(req, 4096) || "{}");
       if (!checkPassword(user, pass)) {
         noteFailure(ip);
-        return json(res, 401, { error: "User name or password is not correct." });
+        return json(res, 401, { error: "Benutzername oder Passwort stimmt nicht." });
       }
       attempts.delete(ip);
       const token = newSession(user);
@@ -679,9 +690,9 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url === "/api/upload" && req.method === "POST") {
-      if (!sess) return json(res, 401, { error: "Not signed in." });
+      if (!sess) return json(res, 401, { error: "Nicht angemeldet." });
       if (uploadTooOften(sess.user)) {
-        return json(res, 429, { error: "Too many uploads. Please try again later." });
+        return json(res, 429, { error: "Zu viele Uploads. Bitte später erneut." });
       }
 
       const q = new URL(req.url, "http://x").searchParams;
@@ -694,16 +705,16 @@ const server = http.createServer(async (req, res) => {
       let id;
       if (variant === "thumb") {
         id = q.get("id") || "";
-        if (!ID_RE.test(id)) return json(res, 400, { error: "Invalid image id." });
+        if (!ID_RE.test(id)) return json(res, 400, { error: "Ungültige Bild-Kennung." });
         if (!uploadNames(id).some(f => !f.includes("-480"))) {
-          return json(res, 400, { error: "The main image for this thumbnail is missing." });
+          return json(res, 400, { error: "Zum Vorschaubild fehlt das Hauptbild." });
         }
       } else {
         id = crypto.randomBytes(8).toString("hex");
       }
 
       if (uploadDirBytes() > UPLOAD_DIR_MAX_BYTES) {
-        return json(res, 507, { error: "The image store is full. Please delete old images." });
+        return json(res, 507, { error: "Der Bildspeicher ist voll. Bitte alte Bilder löschen." });
       }
 
       /* Caught here rather than in the generic handler, so the answer names
@@ -714,9 +725,9 @@ const server = http.createServer(async (req, res) => {
       } catch (err) {
         if (err && err.tooLarge) {
           return json(res, 413, {
-            error: `The image is still larger than ${Math.round(UPLOAD_MAX_BYTES / 1024 / 1024)} MB after conversion. ` +
-                   "Normally the browser scales it down first — if this keeps happening, " +
-                   "the browser could not convert the file and sent the original."
+            error: `Das Bild ist nach der Umwandlung immer noch gr\u00f6sser als ${Math.round(UPLOAD_MAX_BYTES / 1024 / 1024)} MB. ` +
+                   "Normalerweise verkleinert der Browser es vorher — wenn das immer wieder " +
+                   "vorkommt, konnte der Browser die Datei nicht umwandeln und hat das Original geschickt."
           });
         }
         throw err;
@@ -725,8 +736,8 @@ const server = http.createServer(async (req, res) => {
       const format = detectFormat(buf);
       if (!format) {
         return json(res, 415, {
-          error: "Only WebP or JPEG images. The upload converts the file itself — " +
-                 "if this appears, the browser sent something else."
+          error: "Nur WebP- oder JPEG-Bilder. Das Hochladen wandelt die Datei selbst um — " +
+                 "erscheint das hier, hat der Browser etwas anderes geschickt."
         });
       }
 
@@ -745,10 +756,10 @@ const server = http.createServer(async (req, res) => {
         console.error(`[upload] writing ${name} failed: ${err.code} ${err.message}`);
         try { fs.unlinkSync(tmp); } catch { /* nothing left over */ }
         const why = err.code === "EACCES" || err.code === "EPERM"
-          ? "the service may not write to data/ (ReadWritePaths in the systemd unit, and the owner of the directory)"
-          : err.code === "ENOSPC" ? "the disk is full"
-          : `error code ${err.code}`;
-        return json(res, 500, { error: `The image could not be stored: ${why}.` });
+          ? "der Dienst darf nicht nach data/ schreiben (ReadWritePaths in der systemd-Unit und der Besitzer des Ordners)"
+          : err.code === "ENOSPC" ? "die Platte ist voll"
+          : `Fehlercode ${err.code}`;
+        return json(res, 500, { error: `Das Bild konnte nicht gespeichert werden: ${why}.` });
       }
       noteUpload(sess.user);
 
@@ -757,7 +768,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url === "/api/uploads" && req.method === "GET") {
-      if (!sess) return json(res, 401, { error: "Not signed in." });
+      if (!sess) return json(res, 401, { error: "Nicht angemeldet." });
       return json(res, 200, {
         items: uploadList(),
         bytes: uploadDirBytes(),
@@ -766,9 +777,9 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.startsWith("/api/uploads/") && req.method === "DELETE") {
-      if (!sess) return json(res, 401, { error: "Not signed in." });
+      if (!sess) return json(res, 401, { error: "Nicht angemeldet." });
       const id = url.slice("/api/uploads/".length);
-      if (!ID_RE.test(id)) return json(res, 400, { error: "Invalid image id." });
+      if (!ID_RE.test(id)) return json(res, 400, { error: "Ungültige Bild-Kennung." });
 
       /* Only refuse when the caller has not been warned yet: the admin area
          asks once and then repeats the request with ?force=1. */
@@ -783,13 +794,13 @@ const server = http.createServer(async (req, res) => {
         try { fs.unlinkSync(path.join(UPLOAD_DIR, name)); removed++; }
         catch { /* was not there, nothing to do */ }
       }
-      if (!removed) return json(res, 404, { error: "Image not found." });
+      if (!removed) return json(res, 404, { error: "Bild nicht gefunden." });
       console.log(`[${new Date().toISOString()}] ${sess.user} deleted image ${id}`);
       return json(res, 200, { ok: true, places });
     }
 
     if (url === "/api/inquiries/read" && req.method === "POST") {
-      if (!sess) return json(res, 401, { error: "Not signed in." });
+      if (!sess) return json(res, 401, { error: "Nicht angemeldet." });
       const body = JSON.parse(await readText(req, 65536) || "{}");
       const ids = Array.isArray(body.ids) ? body.ids.filter(x => typeof x === "string") : [];
       /* Only ids that actually exist, so the file cannot be filled with
@@ -801,7 +812,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url === "/api/inquiries" && req.method === "GET") {
-      if (!sess) return json(res, 401, { error: "Not signed in." });
+      if (!sess) return json(res, 401, { error: "Nicht angemeldet." });
       const seen = new Set(readSeen());
       const items = readInquiries().slice().reverse()
         .map(e => Object.assign({}, e, { seen: seen.has(e.id) }));
@@ -809,22 +820,22 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url === "/api/content" && req.method === "GET") {
-      if (!sess) return json(res, 401, { error: "Not signed in." });
+      if (!sess) return json(res, 401, { error: "Nicht angemeldet." });
       return json(res, 200, loadContent());
     }
 
     if (url === "/api/content" && req.method === "POST") {
-      if (!sess) return json(res, 401, { error: "Not signed in." });
+      if (!sess) return json(res, 401, { error: "Nicht angemeldet." });
       const obj = JSON.parse(await readText(req));
       if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
-        return json(res, 400, { error: "Invalid content." });
+        return json(res, 400, { error: "Ungültiger Inhalt." });
       }
       saveContent(obj);
       console.log(`[${new Date().toISOString()}] ${sess.user} saved content.js`);
       return json(res, 200, { ok: true });
     }
 
-    return json(res, 404, { error: "Unknown endpoint." });
+    return json(res, 404, { error: "Unbekannter Endpunkt." });
   } catch (e) {
     if (e && e.tooLarge) {
       return json(res, 413, { error: "Die Anfrage ist zu gross." });
@@ -847,5 +858,12 @@ if (!Object.keys(readUsers()).length) {
 }
 server.listen(PORT, HOST, () => {
   console.log(`  Website:      http://${HOST}:${PORT}/`);
-  console.log(`  Admin:        http://${HOST}:${PORT}/admin.html\n`);
+  console.log(`  Admin:        http://${HOST}:${PORT}/admin.html`);
+  /* Stated at start-up, so it is visible in the log whether an enquiry will
+     trigger a mail — without having to send a test enquiry to find out. */
+  const missing = mailConfigMissing();
+  console.log(missing.length
+    ? `  Mail:         off (missing: ${missing.join(", ")}) — see README 3d`
+    : `  Mail:         on, to ${process.env.MAIL_TO}`);
+  console.log("");
 });
