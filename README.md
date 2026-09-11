@@ -229,6 +229,41 @@ area anyway.
 Without a running server there is no recipient — on a plain web space the form
 has no function; the status line then names the mail address.
 
+## Saved, but the page still shows the old text
+
+The save landed if `journalctl -u nickberdi` contains a line like
+`… nick saved content.js` — then `data/content.js` on the Pi is current and the
+stale page is a cache between the Pi and the browser.
+
+Check where the old copy is coming from:
+
+```
+# on the Pi: what the origin actually holds
+curl -s http://127.0.0.1:4000/data/content.js | md5sum
+
+# what the world gets
+curl -s https://<domain>/data/content.js | md5sum
+curl -sI https://<domain>/data/content.js | grep -i 'cf-cache-status\|age\|cache-control'
+```
+
+Two different sums, or `cf-cache-status: HIT` and an `Age:` above zero, mean
+Cloudflare is holding the old file. Fix it in two places:
+
+- **Cache rule** — `/data/content.js` must be on *Bypass cache* (see the table in
+  3a). Without it Cloudflare caches the file by its `.js` extension.
+- **Purge once** — Caching → Configuration → *Purge Everything*, so the copy
+  already at the edge is dropped.
+
+The server sends `Cache-Control: no-store, must-revalidate` for this one file, so
+neither the edge nor the browser may keep a copy. It used to send `no-cache`,
+which only asks for revalidation and — with no ETag to revalidate against — let a
+CDN keep serving the old version. If the header on the live site still reads
+`no-cache`, the Pi is running an older `server.js`: copy the files over and
+`sudo systemctl restart nickberdi`.
+
+In the browser, a normal reload can still show the old page; use a hard reload
+(Ctrl/Cmd + Shift + R) or a private window to be sure.
+
 ## Hardening
 
 What `server.js` does by itself — regardless of whether Caddy and Cloudflare are

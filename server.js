@@ -535,7 +535,17 @@ function sendFile(res, file) {
        for a long time and immutably. */
     const isUpload = file.startsWith(UPLOAD_DIR + path.sep);
     let cache;
-    if (isContent || type.startsWith("text/html")) cache = "no-cache";
+    if (isContent) {
+      /* content.js is the one file that must never be stale: the moment it is
+         saved, every page has to show the new text. "no-cache" was too weak —
+         it permits storing and only asks for revalidation, and since nothing
+         here sends an ETag there is nothing to revalidate against, so a CDN
+         that caches .js by extension could keep handing out the old version.
+         "no-store" forbids keeping a copy at all, at the edge and in the
+         browser. The file is a few kilobytes, so this costs nothing. */
+      cache = "no-store, must-revalidate";
+    }
+    else if (type.startsWith("text/html")) cache = "no-cache";
     else if (isUpload) cache = "public, max-age=31536000, immutable";
     else cache = "public, max-age=3600";
 

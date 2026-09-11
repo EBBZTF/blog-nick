@@ -13,7 +13,12 @@
 /* nav — sticky: the top stripe pins first, the bar sits right below it */
 .site>.tri:first-child{position:sticky;top:0;z-index:60}
 .nav{position:sticky;top:4px;z-index:59;display:flex;align-items:center;gap:17px;padding:13px 26px;background:var(--anthracite);color:var(--alpine)}
+/* The wordmark is a link back to the home page. It has to opt out of the .nav a
+   rule below, otherwise it would take on the grey of the menu items. */
 .mark{display:flex;align-items:center;gap:10px;margin-right:auto}
+.nav a.mark{color:var(--alpine);text-decoration:none;font-size:inherit;font-weight:inherit}
+.nav a.mark:hover b,.nav a.mark:focus-visible b{color:var(--bbs)}
+.nav a.mark:focus-visible{outline:2px solid var(--bbs);outline-offset:3px}
 .mark .grille{color:var(--alpine);opacity:.9;flex:none}
 .mark b{font-family:Archivo,sans-serif;font-weight:800;font-size:15px;letter-spacing:.05em}
 .mark span{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--bbs)}
