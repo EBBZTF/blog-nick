@@ -63,7 +63,8 @@ The page file names are German on purpose — see “Language in the code” bel
 | `css/site.css` | nav (sticky), hero, sections, tables, form, footer |
 | `css/components.css` | discipline badges, setup cards, empty states, car diagram |
 | `css/admin.css` | only for `admin.html` |
-| `data/content.js` | **the entire content of the website** |
+| `data/content.js` | **the entire content of the website** — written by the admin area, git-ignored |
+| `data/content.default.js` | the starting content a fresh installation is seeded from |
 | `data/inquiries.json` | received contact enquiries, created by the server |
 | `data/uploads/` | uploaded images, delivered under `/media/` |
 | `js/labels.js` | German wording for the codes used in the content |
@@ -260,6 +261,31 @@ area anyway.
 
 Without a running server there is no recipient — on a plain web space the form
 has no function; the status line then names the mail address.
+
+## Why data/content.js is not in the repository
+
+It is written by the admin area, so on the Pi it holds what Nick has actually
+saved, while in the repository it would hold whatever was committed last. Those
+two drift apart within a day, and every `git pull` then stops with
+
+```
+error: Your local changes to the following files would be overwritten by merge:
+        data/content.js
+```
+
+So the live file is git-ignored, exactly like `data/inquiries.json` and
+`data/uploads/`. What is tracked instead is `data/content.default.js`, and
+`server.js` copies it to `data/content.js` at start-up **only if that file does
+not exist yet** — a fresh checkout comes up with content, an existing
+installation is never touched.
+
+Consequence worth knowing: a new field added to `SCHEMA` does **not** arrive on
+the Pi with its default text. It appears as an empty field in the admin area,
+and the page shows the fallback written in the HTML until somebody fills it in.
+That is why every `data-cms` marker carries a sensible default in the markup.
+
+To change the starting content for future installations, edit
+`data/content.default.js`. To change the live site, use the admin area.
 
 ## Saved, but the page still shows the old text
 

@@ -3,6 +3,10 @@
 # daily backup instead (see deploy/backup-content.sh).
 data/admin-users.json
 data/inquiries.json
+# The live content belongs to whoever edits it in the admin area, not to the
+# repository — otherwise every deploy collides with what Nick has saved.
+# data/content.default.js is tracked and seeds a fresh installation.
+data/content.js
 data/uploads/
 data/backups/
 data/*.tmp

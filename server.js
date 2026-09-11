@@ -852,6 +852,23 @@ if (argv[0] === "--remove-user") {
   console.log(`User "${argv[1]}" removed.`); process.exit(0);
 }
 
+/* data/content.js is written by the admin area and therefore belongs to the
+   installation, not to the repository — it is git-ignored, so a deploy can never
+   collide with what was saved on the Pi. A fresh checkout has no such file yet,
+   so it is seeded once from the tracked default. */
+function ensureContentFile() {
+  if (fs.existsSync(CONTENT_FILE)) return;
+  const seed = path.join(ROOT, "data", "content.default.js");
+  if (!fs.existsSync(seed)) {
+    console.error(`  No ${CONTENT_FILE} and no default to seed it from.`);
+    return;
+  }
+  fs.mkdirSync(path.dirname(CONTENT_FILE), { recursive: true });
+  fs.copyFileSync(seed, CONTENT_FILE);
+  console.log("  Content:      data/content.js created from content.default.js");
+}
+ensureContentFile();
+
 if (!Object.keys(readUsers()).length) {
   console.log("\n  No access set up yet. First run:\n");
   console.log('    node server.js --set-password nick "a-long-password"\n');
