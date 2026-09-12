@@ -186,6 +186,22 @@
     });
   }
 
+  /* Focus point of a picture, in percent. 50/50 is the middle, which is what a
+     browser does by default.
+
+     Deliberately not a crop: the same photo appears in the gallery at 4:3, in
+     the journal at 16:9 and in the hero almost square. A fixed crop would suit
+     one of those and ruin the others. A focus point says which part must stay
+     visible, and every placement crops around it by itself. */
+  function focusOf(pic) {
+    if (!pic) return { x: 50, y: 50 };
+    return {
+      x: typeof pic.focusX === "number" ? pic.focusX : 50,
+      y: typeof pic.focusY === "number" ? pic.focusY : 50
+    };
+  }
+  function clampPercent(n) { return Math.max(0, Math.min(100, Math.round(n))); }
+
   function create(spec, get, set, markDirty) {
     var wrap = document.createElement("div");
     wrap.className = "fld imgfld";
@@ -230,6 +246,96 @@
     var note = document.createElement("div");
     note.className = "sub";
     buttons.appendChild(note);
+
+    /* ---- position within the frame ---- */
+    /* Works like setting a profile picture: drag the photo inside the frame
+       until the right part is showing. */
+    var focusWrap = document.createElement("div");
+    focusWrap.className = "focus";
+    var focusLabel = document.createElement("label");
+    focusLabel.textContent = "Bildausschnitt — zum Verschieben ziehen";
+    focusWrap.appendChild(focusLabel);
+
+    var stage = document.createElement("div");
+    stage.className = "focus-box";
+    stage.tabIndex = 0;
+    stage.style.aspectRatio = spec.ratio || "4 / 3";
+    var stageImg = document.createElement("img");
+    stageImg.alt = "";
+    stageImg.draggable = false;
+    stage.appendChild(stageImg);
+    focusWrap.appendChild(stage);
+
+    var focusRow = document.createElement("div");
+    focusRow.className = "focus-row";
+    var centreBtn = button("Mitte", function () { setFocus(50, 50); });
+    var focusNote = document.createElement("span");
+    focusNote.className = "sub";
+    focusRow.appendChild(centreBtn);
+    focusRow.appendChild(focusNote);
+    focusWrap.appendChild(focusRow);
+    wrap.appendChild(focusWrap);
+
+    function setFocus(x, y) {
+      var pic = toPicture(get());
+      if (!pic) return;
+      pic.focusX = clampPercent(x);
+      pic.focusY = clampPercent(y);
+      set(pic); markDirty(); paintFocus();
+    }
+
+    function paintFocus() {
+      var pic = toPicture(get());
+      /* Only shown where a frame actually crops the picture. A partner logo is
+         scaled to fit, never cut, so a position would have no effect there —
+         the field declares that by having no ratio. */
+      focusWrap.hidden = !pic || !spec.ratio;
+      if (!pic || !spec.ratio) return;
+      var f = focusOf(pic);
+      stageImg.src = pic.src;
+      stageImg.style.objectPosition = f.x + "% " + f.y + "%";
+      focusNote.textContent = f.x === 50 && f.y === 50
+        ? "Mitte"
+        : "Ausschnitt " + f.x + " / " + f.y;
+    }
+
+    /* Dragging moves the picture, so the visible section moves the other way:
+       pulling the photo down brings its upper part into view. */
+    (function enableDrag() {
+      var active = false, lastX = 0, lastY = 0;
+      stage.addEventListener("pointerdown", function (e) {
+        if (!toPicture(get())) return;
+        active = true; lastX = e.clientX; lastY = e.clientY;
+        stage.setPointerCapture(e.pointerId);
+        stage.classList.add("dragging");
+      });
+      stage.addEventListener("pointermove", function (e) {
+        if (!active) return;
+        e.preventDefault();
+        var box = stage.getBoundingClientRect();
+        var f = focusOf(toPicture(get()));
+        var nx = f.x - (e.clientX - lastX) / box.width * 100;
+        var ny = f.y - (e.clientY - lastY) / box.height * 100;
+        lastX = e.clientX; lastY = e.clientY;
+        setFocus(nx, ny);
+      });
+      ["pointerup", "pointercancel"].forEach(function (ev) {
+        stage.addEventListener(ev, function () {
+          active = false; stage.classList.remove("dragging");
+        });
+      });
+      /* Same thing from the keyboard, for fine adjustment and for anyone not
+         using a mouse. */
+      stage.addEventListener("keydown", function (e) {
+        var f = focusOf(toPicture(get()));
+        var step = e.shiftKey ? 10 : 2;
+        var moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+        var m = moves[e.key];
+        if (!m) return;
+        e.preventDefault();
+        setFocus(f.x + m[0], f.y + m[1]);
+      });
+    })();
 
     /* Alt text sits with the image, because it belongs to it — the gallery
        keeps its own separate caption field. */
@@ -303,10 +409,12 @@
         preview.textContent = "kein Bild";
         altBox.value = "";
         clear.disabled = true;
+        focusWrap.hidden = true;
         return;
       }
       preview.classList.remove("empty");
       clear.disabled = false;
+      paintFocus();
       var img = document.createElement("img");
       img.src = pic.thumb || pic.src;
       img.alt = "";

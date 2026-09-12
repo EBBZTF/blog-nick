@@ -29,7 +29,7 @@
       { k: "heroTitle", label: "Titel" },
       { k: "heroSub",   label: "Untertitel" },
       { k: "heroText",  label: "Einstiegstext", type: "area" },
-      { k: "heroImage", label: "Grosses Bild oben", type: "image" },
+      { k: "heroImage", label: "Grosses Bild oben", type: "image", ratio: "1 / 1" },
       { k: "heroBtn1",  label: "Knopf 1", half: true },
       { k: "heroBtn2",  label: "Knopf 2", half: true },
       { k: "nextEvent",      label: "N\u00e4chster Start — Veranstaltung", half: true, sub: "\u2014 bedeutet: noch offen" },
@@ -50,7 +50,7 @@
       { k: "title",     label: "Name / Titel" },
       { k: "sub",       label: "Zeile unter dem Namen" },
       { k: "intro",     label: "Kurzer Einstieg neben dem Foto", type: "area" },
-      { k: "heroImage", label: "Foto", type: "image" },
+      { k: "heroImage", label: "Foto", type: "image", ratio: "1 / 1" },
       { k: "factBorn",        label: "Jahrgang", half: true },
       { k: "factHome",        label: "Wohnort", half: true },
       { k: "factDisciplines", label: "Disziplinen", half: true },
@@ -85,17 +85,17 @@
     { id: "carPage", title: "Seite \u201eDas Auto\u201c", key: "carPage", fields: [
       { k: "title",       label: "Titel" },
       { k: "intro",       label: "Einstiegstext", type: "area" },
-      { k: "heroImage",   label: "Grosses Bild oben", type: "image" },
+      { k: "heroImage",   label: "Grosses Bild oben", type: "image", ratio: "1 / 1" },
       { k: "setupsTitle", label: "Titel des Abschnitts mit den zwei Kacheln" },
       { k: "rallyTitle",  label: "Kachel Rallye — Titel" },
       { k: "rallyText",   label: "Kachel Rallye — Text", type: "area" },
       { k: "hillTitle",   label: "Kachel Bergrennen — Titel" },
       { k: "hillText",    label: "Kachel Bergrennen — Text", type: "area" },
-      { k: "image1",      label: "Bild 1 der drei Kacheln", type: "image" },
+      { k: "image1",      label: "Bild 1 der drei Kacheln", type: "image", ratio: "4 / 3" },
       { k: "caption1",    label: "Bildunterschrift 1" },
-      { k: "image2",      label: "Bild 2 der drei Kacheln", type: "image" },
+      { k: "image2",      label: "Bild 2 der drei Kacheln", type: "image", ratio: "4 / 3" },
       { k: "caption2",    label: "Bildunterschrift 2" },
-      { k: "image3",      label: "Bild 3 der drei Kacheln", type: "image" },
+      { k: "image3",      label: "Bild 3 der drei Kacheln", type: "image", ratio: "4 / 3" },
       { k: "caption3",    label: "Bildunterschrift 3" }
     ]},
 
@@ -129,7 +129,7 @@
     { id: "partner", title: "Seite \u201ePartner\u201c", key: "partner", fields: [
       { k: "heroTitle", label: "Titel" },
       { k: "heroText",  label: "Einstiegstext", type: "area" },
-      { k: "heroImage", label: "Bild oben rechts", type: "image" },
+      { k: "heroImage", label: "Bild oben rechts", type: "image", ratio: "1 / 1" },
       { k: "kpiRaceDays",    label: "Renntage pro Saison", half: true, sub: "\u2014 bedeutet: noch offen" },
       { k: "kpiDisciplines", label: "Disziplinen", half: true },
       { k: "kpiInstagram",   label: "Instagram", half: true },
@@ -176,10 +176,9 @@
     { id: "gallery", title: "Galerie", hint: "Bild ausw\u00e4hlen, Kategorie setzen — die Kategorie steuert die Filter auf der Galerie-Seite.", list: "gallery",
       label: function (o) { return o.cap || "Neues Bild"; },
       item: [
-        { k: "src",     label: "Bild", type: "image" },
+        { k: "src",     label: "Bild", type: "image", ratio: "4 / 3" },
         { k: "cap",     label: "Bildunterschrift" },
-        { k: "tag",     label: "Kategorie", type: "select", options: GALLERY_TAGS, half: true },
-        { k: "lowCrop", label: "Auto sitzt tief im Bild (anderer Beschnitt)", type: "check", half: true }
+        { k: "tag",     label: "Kategorie", type: "select", options: GALLERY_TAGS }
       ]},
 
     { id: "journalTexts", title: "Seite \u201eJournal\u201c", key: "journal", fields: [
@@ -192,7 +191,7 @@
         { k: "date",       label: "Date", half: true, sub: "z. B. 9. Juni 2027" },
         { k: "discipline", label: "Disziplin", type: "select", options: DISCIPLINE_OPTIONAL, half: true },
         { k: "title",      label: "Titel" },
-        { k: "image",      label: "Titelbild", type: "image" },
+        { k: "image",      label: "Titelbild", type: "image", ratio: "16 / 9" },
         { k: "text",       label: "Text", type: "area", rows: 8, sub: "Leerzeile = neuer Absatz" }
       ]},
 

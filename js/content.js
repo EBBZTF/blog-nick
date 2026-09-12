@@ -40,6 +40,13 @@
      that only ever shows small crops. */
   function applyImage(node, pic, altFallback, sizes) {
     node.src = pic.src;
+    /* Which part of the picture stays visible when a frame crops it. Set in the
+       admin area by dragging; 50/50 is the browser default and is left alone. */
+    if (typeof pic.focusX === "number" || typeof pic.focusY === "number") {
+      var fx = typeof pic.focusX === "number" ? pic.focusX : 50;
+      var fy = typeof pic.focusY === "number" ? pic.focusY : 50;
+      node.style.objectPosition = fx + "% " + fy + "%";
+    }
     node.alt = typeof pic.alt === "string" && pic.alt ? pic.alt : (altFallback || "");
     if (pic.w && pic.h) { node.width = pic.w; node.height = pic.h; }
     if (sizes && pic.thumb && pic.thumb !== pic.src && pic.w) {
@@ -160,7 +167,9 @@
       var img = el("img");
       applyImage(img, pic, g.alt, "(max-width:760px) 100vw, 33vw");
       img.loading = "lazy";
-      if (g.lowCrop) img.className = "low-crop";
+      /* Older entries carried a checkbox instead of a focus point. Still read,
+         so content written before the change keeps its framing. */
+      if (g.lowCrop && typeof pic.focusY !== "number") img.className = "low-crop";
       cell.appendChild(img);
       cell.appendChild(el("div", "cap", g.cap || ""));
       if (g.tag) cell.setAttribute("data-tag", g.tag);

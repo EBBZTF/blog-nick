@@ -181,6 +181,19 @@ Where a thumbnail exists, `js/content.js` offers both sizes via `srcset`. That
 counts most in the gallery: nine tiles at a third of the width each used to pull
 the image at full size.
 
+**Position within the frame.** The same photo appears in the gallery at 4:3, in
+the journal at 16:9 and in the hero almost square, so a fixed crop would suit one
+placement and ruin the others. Instead every picture carries a focus point —
+`focusX`/`focusY` in percent — and each frame crops around it. In the admin area
+it is set by dragging the picture inside a preview frame, the way a profile
+picture is positioned; arrow keys nudge it, Shift moves further, and "Mitte"
+resets to 50/50. A field without a `ratio` in the `SCHEMA` shows no control,
+because nothing crops there — a partner logo is scaled to fit, never cut.
+
+This replaced a checkbox ("car sits low in the frame") that could only express one
+fixed alternative. Entries written before the change are still read, so their
+framing is unchanged until someone sets a focus point.
+
 Deleting asks the server first. If the image is still referenced anywhere in the
 content, it names the places and only deletes on confirmation — otherwise an
 image would quietly vanish from a page.
@@ -549,9 +562,24 @@ message lands in spam or is refused outright. Hence a sending service; here
 [Resend](https://resend.com), whose free tier is enough for a few enquiries a
 month.
 
-1. Create an account, add `berdi-racing.com` under **Domains** and enter the
-   **SPF and DKIM records** it shows at Cloudflare under DNS. Without this step
-   Resend refuses to send.
+The mailbox `nick@berdi-racing.com` is at **Proton**, and that matters for the
+DNS: a domain may carry only **one** SPF record. Adding Resend's SPF next to
+Proton's on `berdi-racing.com` turns SPF into a permanent error and breaks the
+existing mail. So the website sends from a subdomain of its own and the apex
+stays exactly as Proton set it up.
+
+| Domain | Used by |
+|---|---|
+| `berdi-racing.com` | Proton — receives, unchanged |
+| `send.berdi-racing.com` | Resend — only the notifications from this site |
+
+DKIM would not clash (selectors are independent); SPF and MX would.
+
+1. Create a Resend account, then **Domains → Add domain** and enter
+   `send.berdi-racing.com`. Put the records it shows into Cloudflare DNS exactly
+   as displayed, on the `send` subdomain, set to **DNS only** (grey cloud).
+   Leave every record on `berdi-racing.com` itself alone — above all the `TXT`
+   beginning `v=spf1`.
 2. Under **API Keys** create a key with sending permission.
 3. Store it on the Pi — in a file of its own, **not** in the systemd unit, since
    that one is in the repository:
@@ -561,13 +589,22 @@ sudo install -m 600 /dev/null /etc/nickberdi.env
 sudo tee /etc/nickberdi.env >/dev/null <<'ENV'
 RESEND_API_KEY=re_...
 MAIL_TO=nick@berdi-racing.com
-MAIL_FROM=website@berdi-racing.com
+MAIL_FROM=berdi-racing.com <noreply@send.berdi-racing.com>
 ENV
 sudo systemctl restart nickberdi
 ```
 
-`MAIL_FROM` has to be on the domain verified at Resend. `MAIL_TO` is who gets
-notified. The sender address of the enquiry is set as `Reply-To` — a reply
+The unit needs `EnvironmentFile=-/etc/nickberdi.env` under `[Service]` for any of
+this to be read; an installation set up before that line existed has to have it
+added by hand.
+
+To try it without touching DNS at all: `MAIL_FROM=onboarding@resend.dev` with
+`MAIL_TO` set to the address the Resend account was registered with. That proves
+the pipeline, then the domain can follow.
+
+`MAIL_FROM` has to be on the domain verified at Resend, and accepts the
+`Name <address>` form. `MAIL_TO` is who gets notified — that side needs no
+configuration, Proton simply receives. The sender address of the enquiry is set as `Reply-To` — a reply
 therefore goes straight to the interested party.
 
 To check: send an enquiry through the form and look at
