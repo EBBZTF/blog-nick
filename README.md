@@ -270,17 +270,23 @@ as `required` and `type="email"` and not a second time in the script. The status
 line is coloured through the classes `.is-ok` and `.is-error`, whose colours are
 the tokens `--ok` and `--error` in `css/base.css`.
 
-The enquiries are shown in the admin area under **Enquiries**. The tab lists them
-newest first, with the address as a `mailto:` link for replying directly; the
-number next to the tab is how many are still unread. Which ones have been read is
-kept in `data/inquiries-read.json` — a file of its own, so that `inquiries.json`
-is only ever appended to and an arrived enquiry is never overwritten.
+Every enquiry produces a **notification e-mail** (see 3d). Order inside the
+server: the enquiry is stored first, then the visitor gets their answer, and only
+after that is the mail sent. A slow or failed mail service therefore cannot
+affect the form — at worst the mail is missing while the enquiry is on disk
+regardless.
 
-In addition a **notification e-mail** goes out, if set up (see 3d). Order inside
-the server: the enquiry is stored first, then the visitor gets their answer, and
-only after that is the mail sent. A slow or failed mail service therefore cannot
-affect the form — at worst the mail is missing and the enquiry is in the admin
-area anyway.
+The admin area used to show them in an *Anfragen* tab. That was removed once the
+mail worked: the notification arrives in a mailbox that gets read anyway, and one
+place to look is better than two. The storage stays, deliberately — it is the
+copy that survives a mail going missing or landing in spam. To read it, if the
+mail ever fails:
+
+```
+cat ~/nick-blog/data/inquiries.json
+```
+
+or `GET /api/inquiries` with an admin session, which is still served.
 
 Without a running server there is no recipient — on a plain web space the form
 has no function; the status line then names the mail address.

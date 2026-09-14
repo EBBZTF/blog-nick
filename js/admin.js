@@ -199,11 +199,6 @@
       { k: "intro", label: "Einstiegstext", type: "area" }
     ]},
 
-    /* Read-only: enquiries are not content, they arrive from the form. Hence
-       neither "key" nor "list" but its own panel. */
-    { id: "inquiries", title: "Anfragen", custom: "inquiries",
-      hint: "Eingegangene Anfragen \u00fcber das Kontaktformular. Neueste zuoberst." },
-
     { id: "contact", title: "Kontakt", key: "contact", fields: [
       { k: "intro",     label: "Einstiegstext", type: "area" },
       { k: "asideText", label: "Ansprechperson — Text", type: "area" },
@@ -426,9 +421,7 @@
         panel.appendChild(p);
       }
 
-      if (group.custom === "inquiries") {
-        inquiriesPanel(panel, tab);
-      } else if (group.list) {
+      if (group.list) {
         listPanel(panel, group);
       } else {
         if (!data[group.key]) data[group.key] = {};
@@ -566,163 +559,6 @@
   window.addEventListener("beforeunload", function (e) {
     if (dirty) { e.preventDefault(); e.returnValue = ""; }
   });
-
-  /* ============================ Enquiries =============================== */
-  /* Every enquiry used to land in a file with nobody being told. This panel is
-     the place where they can actually be read; the counter in the navigation
-     makes it visible that something is waiting.
-
-     Records written before the fields were renamed carry the German keys, and
-     an enquiry is never rewritten once it arrived, so both spellings are read
-     here. */
-  function inquiryValue(entry, name) {
-    var older = { company: "firma", phone: "telefon", message: "nachricht", subject: "betreff", received: "eingang" };
-    if (entry[name] != null && entry[name] !== "") return entry[name];
-    var fallback = older[name];
-    return fallback && entry[fallback] != null ? entry[fallback] : "";
-  }
-
-  function formatMoment(iso) {
-    var d = new Date(iso);
-    if (isNaN(d.getTime())) return String(iso || "");
-    return d.toLocaleString("de-CH", {
-      day: "2-digit", month: "2-digit", year: "numeric",
-      hour: "2-digit", minute: "2-digit"
-    });
-  }
-
-  function inquiriesPanel(panel, tab) {
-    if (mode !== "server") {
-      var offline = document.createElement("div");
-      offline.className = "listempty";
-      offline.textContent = "Anfragen gibt es nur mit laufendem Server.";
-      panel.appendChild(offline);
-      return;
-    }
-
-    var actions = document.createElement("div");
-    actions.className = "inq-actions";
-    var markRead = document.createElement("button");
-    markRead.className = "abtn abtn-l";
-    markRead.textContent = "Alle als gelesen markieren";
-    markRead.disabled = true;
-    actions.appendChild(markRead);
-    panel.appendChild(actions);
-
-    var box = document.createElement("div");
-    panel.appendChild(box);
-
-    var badge = document.createElement("span");
-    badge.className = "badge";
-    badge.hidden = true;
-    tab.appendChild(badge);
-
-    load();
-
-    function load() {
-      box.textContent = "Wird geladen …";
-      API.get("api/inquiries").then(function (res) {
-        render(res.items || []);
-        setBadge(res.unread || 0);
-      }, function (err) {
-        box.textContent = err.message;
-      });
-    }
-
-    function setBadge(n) {
-      badge.hidden = n === 0;
-      badge.textContent = String(n);
-      markRead.disabled = n === 0;
-    }
-
-    markRead.addEventListener("click", function () {
-      var ids = currentIds;
-      markRead.disabled = true;
-      API.post("api/inquiries/read", { ids: ids }).then(load, function (err) {
-        toast(err.message, true);
-        markRead.disabled = false;
-      });
-    });
-
-    var currentIds = [];
-
-    function render(items) {
-      currentIds = items.map(function (e) { return e.id; });
-      box.textContent = "";
-      if (!items.length) {
-        var empty = document.createElement("div");
-        empty.className = "listempty";
-        empty.textContent = "Noch keine Anfrage eingegangen.";
-        box.appendChild(empty);
-        return;
-      }
-      items.forEach(function (entry) {
-        box.appendChild(inquiryCard(entry));
-      });
-    }
-
-    function inquiryCard(entry) {
-      var card = document.createElement("div");
-      card.className = "card inq" + (entry.seen ? "" : " unseen");
-
-      var head = document.createElement("div");
-      head.className = "card-head";
-      var who = document.createElement("b");
-      who.textContent = entry.name || inquiryValue(entry, "company") || entry.email;
-      var when = document.createElement("span");
-      when.className = "ord";
-      when.textContent = formatMoment(inquiryValue(entry, "received"));
-      head.appendChild(who); head.appendChild(when);
-      card.appendChild(head);
-
-      var subject = inquiryValue(entry, "subject");
-      if (subject) card.appendChild(line("Betreff", subject));
-
-      var company = inquiryValue(entry, "company");
-      if (company) card.appendChild(line("Firma", company));
-
-      /* The address as a mailto link, so answering is one click and not a
-         copy-and-paste exercise. */
-      var mailRow = document.createElement("div");
-      mailRow.className = "inq-line";
-      mailRow.appendChild(tagOf("E-Mail"));
-      var link = document.createElement("a");
-      /* The subject stays German although the rest of this area is English:
-         this mail is read by the person who sent the enquiry, not by us. */
-      link.href = "mailto:" + entry.email +
-        "?subject=" + encodeURIComponent("Re: " + (subject || "Ihre Anfrage"));
-      link.textContent = entry.email;
-      mailRow.appendChild(link);
-      card.appendChild(mailRow);
-
-      var phone = inquiryValue(entry, "phone");
-      if (phone) card.appendChild(line("Telefon", phone));
-
-      var message = inquiryValue(entry, "message");
-      if (message) {
-        var msg = document.createElement("p");
-        msg.className = "inq-msg";
-        msg.textContent = message;
-        card.appendChild(msg);
-      }
-      return card;
-    }
-
-    function line(name, value) {
-      var row = document.createElement("div");
-      row.className = "inq-line";
-      row.appendChild(tagOf(name));
-      var v = document.createElement("span");
-      v.textContent = value;
-      row.appendChild(v);
-      return row;
-    }
-    function tagOf(name) {
-      var t = document.createElement("i");
-      t.textContent = name;
-      return t;
-    }
-  }
 
   /* ============================ Image field ============================= */
   /* Filled in by js/upload.js in the next step. Until then an image field is
