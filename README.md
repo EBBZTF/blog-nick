@@ -75,6 +75,7 @@ The page file names are German on purpose — see “Language in the code” bel
 | `js/upload.js` | scaling images, uploading, media library |
 | `js/admin.js` | form and saving logic of the admin area |
 | `server.js` | optional server: sign-in + saving |
+| `smtp.js` | hands the notification to Proton, no dependencies |
 | `deploy/*` | systemd unit, Caddyfile and backup script for the Pi |
 | `img/*.jpg` | the photos (max. 1800 px) |
 
@@ -557,60 +558,63 @@ that the Pi is down.
 Optional. Without this setup simply no mail is sent; the enquiry still lands in
 `data/inquiries.json` and in the admin area.
 
-The Pi cannot send mail itself — a residential line has no reputation, so the
-message lands in spam or is refused outright. Hence a sending service; here
-[Resend](https://resend.com), whose free tier is enough for a few enquiries a
-month.
+The Pi cannot deliver mail itself: residential lines have port 25 blocked and no
+sender reputation, and the domain's SPF names Proton as the sender, so a message
+straight from here would fail authentication even to our own mailbox.
 
-The mailbox `nick@berdi-racing.com` is at **Proton**, and that matters for the
-DNS: a domain may carry only **one** SPF record. Adding Resend's SPF next to
-Proton's on `berdi-racing.com` turns SPF into a permanent error and breaks the
-existing mail. So the website sends from a subdomain of its own and the apex
-stays exactly as Proton set it up.
+So it is handed to **Proton over SMTP submission**, signed in as one of our own
+addresses. Proton does the actual sending, which makes SPF and DKIM correct
+**without a single DNS record of ours** — and without an account anywhere else.
+`smtp.js` speaks the protocol; it is a few hundred lines and, like the rest of
+the project, has no dependencies.
 
-| Domain | Used by |
-|---|---|
-| `berdi-racing.com` | Proton — receives, unchanged |
-| `send.berdi-racing.com` | Resend — only the notifications from this site |
+SMTP submission is a business feature at Proton. If **Settings → All settings →
+Mail → IMAP/SMTP** offers a *Generate token* button, it is available.
 
-DKIM would not clash (selectors are independent); SPF and MX would.
-
-1. Create a Resend account, then **Domains → Add domain** and enter
-   `send.berdi-racing.com`. Put the records it shows into Cloudflare DNS exactly
-   as displayed, on the `send` subdomain, set to **DNS only** (grey cloud).
-   Leave every record on `berdi-racing.com` itself alone — above all the `TXT`
-   beginning `v=spf1`.
-2. Under **API Keys** create a key with sending permission.
-3. Store it on the Pi — in a file of its own, **not** in the systemd unit, since
+1. There, create an **SMTP token** for the address the site should send from,
+   e.g. `info@berdi-racing.com`. It is shown once — that string is the password,
+   not the account password.
+2. Store it on the Pi, in a file of its own, **not** in the systemd unit, since
    that one is in the repository:
 
 ```
 sudo install -m 600 /dev/null /etc/nickberdi.env
 sudo tee /etc/nickberdi.env >/dev/null <<'ENV'
-RESEND_API_KEY=re_...
+SMTP_USER=info@berdi-racing.com
+SMTP_PASS=das-generierte-token
 MAIL_TO=nick@berdi-racing.com
-MAIL_FROM=berdi-racing.com <noreply@send.berdi-racing.com>
+MAIL_FROM=berdi-racing.com <info@berdi-racing.com>
 ENV
-sudo systemctl restart nickberdi
 ```
 
-The unit needs `EnvironmentFile=-/etc/nickberdi.env` under `[Service]` for any of
-this to be read; an installation set up before that line existed has to have it
-added by hand.
+3. The unit needs `EnvironmentFile=-/etc/nickberdi.env` under `[Service]` for any
+   of this to be read. An installation set up before that line existed has to
+   have it added by hand:
 
-To try it without touching DNS at all: `MAIL_FROM=onboarding@resend.dev` with
-`MAIL_TO` set to the address the Resend account was registered with. That proves
-the pipeline, then the domain can follow.
+```
+grep -q 'EnvironmentFile=-/etc/nickberdi.env' /etc/systemd/system/nickberdi.service \
+  || sudo sed -i '/^\[Service\]/a EnvironmentFile=-/etc/nickberdi.env' /etc/systemd/system/nickberdi.service
+sudo systemctl daemon-reload && sudo systemctl restart nickberdi
+```
 
-`MAIL_FROM` has to be on the domain verified at Resend, and accepts the
-`Name <address>` form. `MAIL_TO` is who gets notified — that side needs no
-configuration, Proton simply receives. The sender address of the enquiry is set as `Reply-To` — a reply
-therefore goes straight to the interested party.
+| Variable | Default | Meaning |
+|---|---|---|
+| `SMTP_USER` | — | the address the token belongs to |
+| `SMTP_PASS` | — | the generated token |
+| `MAIL_TO` | — | who gets told |
+| `SMTP_HOST` | `smtp.protonmail.ch` | |
+| `SMTP_PORT` | `587` | 587 upgrades with STARTTLS, 465 is TLS from the start |
+| `SMTP_SECURE` | from the port | `true` forces TLS from the first byte |
+| `MAIL_FROM` | `SMTP_USER` | accepts the `Name <address>` form |
 
-To check: send an enquiry through the form and look at
-`journalctl -u nickberdi -n 20`. If `[mail] Resend answered 401` appears there,
-the key is wrong; with `422` the domain verification is missing. In both cases
-the enquiry is stored anyway.
+The address of the enquirer is set as `Reply-To`, so replying in Proton answers
+the sponsor directly rather than the website.
+
+Checking: `journalctl -u nickberdi -n 20` states at start-up whether it is
+configured — `Mail: on, info@… -> nick@…` or `Mail: off (missing: …)`. After an
+enquiry the log says either `[mail] sent to …` or why not. In every case the
+enquiry itself is already stored; mail is sent afterwards and can never affect
+what the visitor sees.
 
 ### 4. Backups
 

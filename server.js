@@ -200,23 +200,31 @@ function writeSeen(ids) {
 }
 
 /* --------------------------- Notification by mail ----------------------- */
-/* The Pi cannot send mail itself — a residential address has no reputation and
-   the message would land in spam or be refused outright. So it goes through a
-   sending service. Without the environment variables nothing is sent and
-   nothing breaks; a fresh clone and local development behave as before.
+/* The Pi cannot deliver mail itself: residential lines have port 25 blocked and
+   no sender reputation, and the domain's SPF names Proton as the sender, so a
+   message straight from here would fail authentication even to our own mailbox.
 
-     RESEND_API_KEY   API key of the service
-     MAIL_TO          who gets the notification
-     MAIL_FROM        sender, must be on a domain verified at Resend
+   So it is handed to Proton over SMTP submission, signed in as one of our own
+   addresses. Proton then does the actual sending, which makes SPF and DKIM
+   correct without a single DNS record of ours.
+
+     SMTP_HOST   smtp.protonmail.ch
+     SMTP_PORT   587 (STARTTLS) or 465 (TLS)
+     SMTP_USER   the address the token belongs to, e.g. info@berdi-racing.com
+     SMTP_PASS   the token generated in Proton, not the account password
+     MAIL_TO     who gets told
+     MAIL_FROM   optional, defaults to SMTP_USER
+
+   Without the variables nothing is sent and nothing breaks; a fresh clone and
+   local development behave as before.
 
    Deliberately fire and forget: the visitor already has their confirmation
-   before this runs. A contact form must never fail because a third party is
-   down. */
-const https = require("https");
+   before this runs. A contact form must never fail because mail is slow. */
+const smtp = require("./smtp");
 
-/* Which of the three variables are missing — empty array means mail is set up. */
+/* Which of the required variables are missing — empty array means it is set up. */
 function mailConfigMissing() {
-  return ["RESEND_API_KEY", "MAIL_TO", "MAIL_FROM"].filter(n => !process.env[n]);
+  return ["SMTP_USER", "SMTP_PASS", "MAIL_TO"].filter(n => !process.env[n]);
 }
 
 function notifyByMail(entry) {
@@ -227,11 +235,8 @@ function notifyByMail(entry) {
     console.warn(`[mail] not sent, configuration missing: ${missing.join(", ")}`);
     return;
   }
-  const key = process.env.RESEND_API_KEY;
-  const to = process.env.MAIL_TO;
-  const from = process.env.MAIL_FROM;
 
-  /* English, like the rest of the admin side: this mail goes to whoever runs
+  /* English, like the rest of the server side: this mail goes to whoever runs
      the site, not to a visitor. The enquiry text inside it is of course
      whatever the sender wrote. */
   const lines = [
@@ -244,36 +249,25 @@ function notifyByMail(entry) {
     entry.message || "(no message)",
     "",
     `Received: ${entry.received}`,
-    "In the admin area under “Enquiries”."
+    "In the admin area under “Anfragen”."
   ].join("\n");
 
-  const body = JSON.stringify({
-    from,
-    to: [to],
-    reply_to: entry.email,
-    subject: `New enquiry from ${entry.name || entry.email}`,
+  smtp.sendMail({
+    host: process.env.SMTP_HOST || "smtp.protonmail.ch",
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : undefined,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.MAIL_FROM || process.env.SMTP_USER,
+    to: process.env.MAIL_TO,
+    /* Replying in the mail programme answers the enquirer, not the website. */
+    replyTo: entry.email,
+    subject: `Neue Anfrage von ${entry.name || entry.email}`,
     text: lines
-  });
-
-  const req = https.request({
-    hostname: "api.resend.com",
-    path: "/emails",
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${key}`,
-      "Content-Type": "application/json",
-      "Content-Length": Buffer.byteLength(body)
-    },
-    timeout: 5000
-  }, res => {
-    res.resume();          /* drain, we only care about the status */
-    if (res.statusCode >= 300) {
-      console.error(`[mail] Resend answered ${res.statusCode}`);
-    }
-  });
-  req.on("timeout", () => req.destroy(new Error("timeout")));
-  req.on("error", err => console.error("[mail] not sent:", err.message));
-  req.end(body);
+  }).then(
+    () => console.log(`[mail] sent to ${process.env.MAIL_TO}`),
+    err => console.error("[mail] not sent:", err.message)
+  );
 }
 
 /* ------------------------------ Uploads --------------------------------- */
@@ -514,7 +508,9 @@ function saveContent(obj) {
    templates. Out of data/ only content.js is public — written as a list of what
    is allowed, so a file added there later is not on the net by accident. */
 function isBlocked(urlPath) {
-  if (urlPath === "/server.js" || urlPath.startsWith("/deploy/")) return true;
+  /* Every .js directly in the project root is server code — server.js, smtp.js
+     and anything added later. Public scripts live in js/. */
+  if (/^\/[^/]+\.js$/.test(urlPath) || urlPath.startsWith("/deploy/")) return true;
   if (urlPath.startsWith("/data/") && urlPath !== "/data/content.js") return true;
   if (path.basename(urlPath).startsWith(".")) return true;
   /* Only known file types. Without this, README.md was downloadable and handed
@@ -881,6 +877,6 @@ server.listen(PORT, HOST, () => {
   const missing = mailConfigMissing();
   console.log(missing.length
     ? `  Mail:         off (missing: ${missing.join(", ")}) — see README 3d`
-    : `  Mail:         on, to ${process.env.MAIL_TO}`);
+    : `  Mail:         on, ${process.env.SMTP_USER} -> ${process.env.MAIL_TO}`);
   console.log("");
 });
