@@ -11,7 +11,7 @@
    Two ways in, both encrypted:
      port 465  TLS from the first byte
      port 587  plain connection, upgraded with STARTTLS before anything secret
-               is sent — this is what Proton documents
+               is sent — this is what GMX and Proton both document
 
    sendMail() builds the connection, converse() handles the dialogue. They are
    kept apart so the protocol can be tested over a plain socket without a

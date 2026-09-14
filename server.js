@@ -201,17 +201,22 @@ function writeSeen(ids) {
 
 /* --------------------------- Notification by mail ----------------------- */
 /* The Pi cannot deliver mail itself: residential lines have port 25 blocked and
-   no sender reputation, and the domain's SPF names Proton as the sender, so a
-   message straight from here would fail authentication even to our own mailbox.
+   have no sender reputation, so a message straight from here would fail
+   authentication even at our own mailbox.
 
-   So it is handed to Proton over SMTP submission, signed in as one of our own
-   addresses. Proton then does the actual sending, which makes SPF and DKIM
-   correct without a single DNS record of ours.
+   So it is handed to an ordinary mailbox provider over SMTP submission, signed
+   in as one of our own addresses. That provider does the actual sending, which
+   makes SPF and DKIM correct without a single DNS record of ours.
 
-     SMTP_HOST   smtp.protonmail.ch
+   Two constraints on the addresses, both learned the hard way (README 3d): the
+   sender has to be an address the provider itself hosts, and sender and
+   recipient must not sit on the same account — a provider files such a message
+   in Sent and it never reaches the inbox.
+
+     SMTP_HOST   mail.gmx.net for GMX, smtp.protonmail.ch for Proton
      SMTP_PORT   587 (STARTTLS) or 465 (TLS)
-     SMTP_USER   the address the token belongs to, e.g. info@berdi-racing.com
-     SMTP_PASS   the token generated in Proton, not the account password
+     SMTP_USER   the address to sign in as, e.g. nick.berdi@gmx.ch
+     SMTP_PASS   its password, or the app-specific one where there is 2FA
      MAIL_TO     who gets told
      MAIL_FROM   optional, defaults to SMTP_USER
 

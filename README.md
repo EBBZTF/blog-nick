@@ -75,7 +75,7 @@ The page file names are German on purpose — see “Language in the code” bel
 | `js/upload.js` | scaling images, uploading, media library |
 | `js/admin.js` | form and saving logic of the admin area |
 | `server.js` | optional server: sign-in + saving |
-| `smtp.js` | hands the notification to Proton, no dependencies |
+| `smtp.js` | hands the notification to the mail provider, no dependencies |
 | `mail.js` | the text and HTML of that notification |
 | `deploy/*` | systemd unit, Caddyfile and backup script for the Pi |
 | `img/*.jpg` | the photos (max. 1800 px) |
@@ -568,31 +568,48 @@ Optional. Without this setup simply no mail is sent; the enquiry still lands in
 `data/inquiries.json` and in the admin area.
 
 The Pi cannot deliver mail itself: residential lines have port 25 blocked and no
-sender reputation, and the domain's SPF names Proton as the sender, so a message
-straight from here would fail authentication even to our own mailbox.
+sender reputation, so a message straight from here would fail authentication
+even at our own mailbox.
 
-So it is handed to **Proton over SMTP submission**, signed in as one of our own
-addresses. Proton does the actual sending, which makes SPF and DKIM correct
-**without a single DNS record of ours** — and without an account anywhere else.
-`smtp.js` speaks the protocol; it is a few hundred lines and, like the rest of
-the project, has no dependencies.
+So it is handed to an ordinary mailbox provider over **SMTP submission**, signed
+in as one of our own addresses. That provider does the actual sending, which
+makes SPF and DKIM correct **without a single DNS record of ours**. `smtp.js`
+speaks the protocol; it is a few hundred lines and, like the rest of the
+project, has no dependencies.
 
-SMTP submission is a business feature at Proton. If **Settings → All settings →
-Mail → IMAP/SMTP** offers a *Generate token* button, it is available.
+Any provider that allows access from a mail program will do. Two things decide
+which address to use:
 
-1. There, create an **SMTP token** for the address the site should send from,
-   e.g. `info@berdi-racing.com`. It is shown once — that string is the password,
-   not the account password.
-2. Store it on the Pi, in a file of its own, **not** in the systemd unit, since
-   that one is in the repository:
+- **The sender must be an address the provider itself hosts.** A provider
+  refuses to send with a `From:` of a domain it does not know, and even if it
+  went through, SPF would fail and the mail would be filed as spam.
+- **Sender and recipient must not be the same account.** A mail sent to another
+  address on the same account is filed in *Sent* and never appears in the inbox.
+  That is why the first attempt with `info@berdi-racing.com` →
+  `nick@berdi-racing.com` produced nothing: both are addresses on one Proton
+  account.
+
+The setup in use here therefore sends from a **GMX** mailbox to the Proton
+address — two separate providers, so delivery is a perfectly normal external
+mail.
+
+1. At GMX under **Einstellungen → POP3/IMAP Abruf**, switch on access from
+   mail programs. Without that the login below is refused with `535`. If the
+   account has two-factor authentication, generate an
+   **anwendungsspezifisches Passwort** there and use that instead of the
+   account password.
+2. Store the credentials on the Pi, in a file of its own, **not** in the systemd
+   unit, since that one is in the repository:
 
 ```
 sudo install -m 600 /dev/null /etc/nickberdi.env
 sudo tee /etc/nickberdi.env >/dev/null <<'ENV'
-SMTP_USER=info@berdi-racing.com
-SMTP_PASS=das-generierte-token
+SMTP_HOST=mail.gmx.net
+SMTP_PORT=587
+SMTP_USER=nick.berdi@gmx.ch
+SMTP_PASS=das-gmx-passwort
 MAIL_TO=nick@berdi-racing.com
-MAIL_FROM=berdi-racing.com <info@berdi-racing.com>
+MAIL_FROM=berdi-racing.com <nick.berdi@gmx.ch>
 ENV
 ```
 
@@ -606,31 +623,38 @@ grep -q 'EnvironmentFile=-/etc/nickberdi.env' /etc/systemd/system/nickberdi.serv
 sudo systemctl daemon-reload && sudo systemctl restart nickberdi
 ```
 
+`journalctl -u nickberdi -n 5` then shows the line
+`Mail: on, nick.berdi@gmx.ch -> nick@berdi-racing.com`, and after a submitted
+form `[mail] sent to …`.
+
 | Variable | Default | Meaning |
 |---|---|---|
-| `SMTP_USER` | — | the address the token belongs to |
-| `SMTP_PASS` | — | the generated token |
+| `SMTP_USER` | — | the address to sign in as; also the sender unless `MAIL_FROM` says otherwise |
+| `SMTP_PASS` | — | its password, or the app-specific one where the provider issues those |
 | `MAIL_TO` | — | who gets told; several addresses separated by commas |
-| `SMTP_HOST` | `smtp.protonmail.ch` | |
+| `SMTP_HOST` | `smtp.protonmail.ch` | `mail.gmx.net` for GMX |
 | `SMTP_PORT` | `587` | 587 upgrades with STARTTLS, 465 is TLS from the start |
 | `SMTP_SECURE` | from the port | `true` forces TLS from the first byte |
-| `MAIL_FROM` | `SMTP_USER` | accepts the `Name <address>` form |
+| `MAIL_FROM` | `SMTP_USER` | accepts the `Name <address>` form — the address part has to stay the one the provider hosts |
 
-The address of the enquirer is set as `Reply-To`, so replying in Proton answers
-the sponsor directly rather than the website.
+The address of the enquirer is set as `Reply-To`, so hitting reply answers the
+sponsor directly rather than the website. Worth knowing: the reply then goes out
+from whichever mailbox it is answered in. Replying from
+`nick@berdi-racing.com` rather than from the GMX inbox keeps the private address
+out of the correspondence.
 
 `MAIL_TO` may name several recipients, separated by commas — each one gets its
 own `RCPT TO` and they are all listed in the `To:` header:
 
 ```
-MAIL_TO=nick.privat@example.com, emma.berdi@gmx.ch
+MAIL_TO=nick@berdi-racing.com, emma.berdi@gmx.ch
 ```
 
-Worth knowing when picking the address: if two addresses belong to the **same**
-Proton account, a mail to one of them lands in that one shared mailbox. Sending
-to `nick@berdi-racing.com` therefore does not reach a separate inbox as long as
-that address is only an alias. Either name the address of the mailbox Nick
-actually signs into, or forward `nick@` onward in Proton's settings.
+Proton also works as the sender, with `SMTP_HOST=smtp.protonmail.ch` and an
+**SMTP token** from **Settings → All settings → Mail → IMAP/SMTP** as
+`SMTP_PASS` — a business feature, available where that screen offers a
+*Generate token* button. The same-account rule above applies: the recipient then
+has to be outside that Proton account.
 
 The mail itself lives in `mail.js`, apart from the sending: it is pure
 formatting with no state, so it can be rendered and looked at without starting
