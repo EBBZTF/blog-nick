@@ -221,6 +221,7 @@ function writeSeen(ids) {
    Deliberately fire and forget: the visitor already has their confirmation
    before this runs. A contact form must never fail because mail is slow. */
 const smtp = require("./smtp");
+const mail = require("./mail");
 
 /* Which of the required variables are missing — empty array means it is set up. */
 function mailConfigMissing() {
@@ -236,22 +237,6 @@ function notifyByMail(entry) {
     return;
   }
 
-  /* English, like the rest of the server side: this mail goes to whoever runs
-     the site, not to a visitor. The enquiry text inside it is of course
-     whatever the sender wrote. */
-  const lines = [
-    `Name:     ${entry.name || "—"}`,
-    `Company:  ${entry.company || "—"}`,
-    `E-mail:   ${entry.email}`,
-    `Phone:    ${entry.phone || "—"}`,
-    `Subject:  ${entry.subject || "—"}`,
-    "",
-    entry.message || "(no message)",
-    "",
-    `Received: ${entry.received}`,
-    "In the admin area under “Anfragen”."
-  ].join("\n");
-
   smtp.sendMail({
     host: process.env.SMTP_HOST || "smtp.protonmail.ch",
     port: Number(process.env.SMTP_PORT) || 587,
@@ -262,10 +247,11 @@ function notifyByMail(entry) {
     to: process.env.MAIL_TO,
     /* Replying in the mail programme answers the enquirer, not the website. */
     replyTo: entry.email,
-    subject: `Neue Anfrage von ${entry.name || entry.email}`,
-    text: lines
+    subject: mail.subject(entry),
+    text: mail.text(entry),
+    html: mail.html(entry)
   }).then(
-    () => console.log(`[mail] sent to ${process.env.MAIL_TO}`),
+    () => console.log(`[mail] sent to ${smtp.recipientList(process.env.MAIL_TO).join(", ")}`),
     err => console.error("[mail] not sent:", err.message)
   );
 }

@@ -30,6 +30,13 @@ function encodeHeader(value) {
   return "=?UTF-8?B?" + Buffer.from(text, "utf8").toString("base64") + "?=";
 }
 
+/* One or several recipients: an array, or a comma-separated string as it comes
+   out of an environment variable. */
+function recipientList(to) {
+  const list = Array.isArray(to) ? to : String(to == null ? "" : to).split(",");
+  return list.map(x => String(x).trim()).filter(Boolean);
+}
+
 /* "Nick <nick@example.com>" -> the bare address for the envelope. */
 function bareAddress(value) {
   const m = String(value).match(/<([^>]+)>/);
@@ -39,6 +46,12 @@ function bareAddress(value) {
 function buildMessage(o) {
   const now = new Date().toUTCString();
   const id = `<${Date.now().toString(36)}.${Math.floor(Math.random() * 1e9).toString(36)}@berdi-racing.com>`;
+
+  /* base64 for every part, so umlauts and long lines cannot break anything on
+     the way. Wrapped at 76 characters as the standard requires. */
+  const b64 = (text) => Buffer.from(String(text), "utf8").toString("base64")
+    .replace(/(.{1,76})/g, "$1\r\n");
+
   const headers = [
     `From: ${/[^\x20-\x7E]/.test(o.from) ? encodeHeader(o.from) : o.from}`,
     `To: ${o.to}`,
@@ -46,17 +59,43 @@ function buildMessage(o) {
     `Subject: ${encodeHeader(o.subject)}`,
     `Date: ${now}`,
     `Message-ID: ${id}`,
-    "MIME-Version: 1.0",
-    "Content-Type: text/plain; charset=utf-8",
-    "Content-Transfer-Encoding: base64"
+    "MIME-Version: 1.0"
   ].filter(Boolean);
 
-  /* base64 for the body, so umlauts and long lines cannot break anything on
-     the way. Wrapped at 76 characters as the standard requires. */
-  const body = Buffer.from(String(o.text), "utf8").toString("base64")
-    .replace(/(.{1,76})/g, "$1\r\n");
+  /* Plain text only, when that is all there is. */
+  if (!o.html) {
+    return headers.concat([
+      "Content-Type: text/plain; charset=utf-8",
+      "Content-Transfer-Encoding: base64"
+    ]).join("\r\n") + "\r\n\r\n" + b64(o.text);
+  }
 
-  return headers.join("\r\n") + "\r\n\r\n" + body;
+  /* Both versions in one message: the reader takes the HTML one, anything that
+     cannot show it — a notification preview, a text-only client, a screen
+     reader — falls back to the plain text. Sending HTML alone also reads as a
+     spam signal. The boundary contains "=" and "_", neither of which base64
+     produces at the start of a line, so it can never appear inside a part by
+     accident. It deliberately does not begin with "--", because the delimiter
+     lines are already "--" plus the boundary and the doubling makes the message
+     needlessly hard to read. */
+  const boundary = "=_berdi_" + Math.floor(Math.random() * 1e12).toString(36);
+  const body = [
+    `--${boundary}`,
+    "Content-Type: text/plain; charset=utf-8",
+    "Content-Transfer-Encoding: base64",
+    "",
+    b64(o.text),
+    `--${boundary}`,
+    "Content-Type: text/html; charset=utf-8",
+    "Content-Transfer-Encoding: base64",
+    "",
+    b64(o.html),
+    `--${boundary}--`
+  ].join("\r\n");
+
+  return headers.concat([
+    `Content-Type: multipart/alternative; boundary="${boundary}"`
+  ]).join("\r\n") + "\r\n\r\n" + body;
 }
 
 /* A line in the body that begins with a dot would end the message early, so it
@@ -145,9 +184,15 @@ function converse(socket, o, opts) {
       }
 
       await say(`MAIL FROM:<${bareAddress(o.from)}>`, [250], "MAIL FROM");
-      await say(`RCPT TO:<${bareAddress(o.to)}>`, [250, 251], "RCPT TO");
+      /* One RCPT TO per recipient; the To: header lists them all. */
+      const rcpts = recipientList(o.to);
+      if (!rcpts.length) throw new Error("SMTP: no recipient given");
+      for (const rcpt of rcpts) {
+        await say(`RCPT TO:<${bareAddress(rcpt)}>`, [250, 251], "RCPT TO");
+      }
       await say("DATA", [354], "DATA");
-      socket.write(dotStuff(buildMessage(o)) + "\r\n.\r\n");
+      const message = buildMessage(Object.assign({}, o, { to: rcpts.join(", ") }));
+      socket.write(dotStuff(message) + "\r\n.\r\n");
       await expect([250], "message");
       socket.write("QUIT\r\n");
       finish(null);
@@ -252,4 +297,4 @@ function sendMail(o) {
   });
 }
 
-module.exports = { sendMail, converse, buildMessage, encodeHeader, dotStuff, bareAddress };
+module.exports = { sendMail, converse, buildMessage, encodeHeader, dotStuff, bareAddress, recipientList };

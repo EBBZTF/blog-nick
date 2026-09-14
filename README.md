@@ -76,6 +76,7 @@ The page file names are German on purpose — see “Language in the code” bel
 | `js/admin.js` | form and saving logic of the admin area |
 | `server.js` | optional server: sign-in + saving |
 | `smtp.js` | hands the notification to Proton, no dependencies |
+| `mail.js` | the text and HTML of that notification |
 | `deploy/*` | systemd unit, Caddyfile and backup script for the Pi |
 | `img/*.jpg` | the photos (max. 1800 px) |
 
@@ -255,6 +256,14 @@ hour are possible, counted separately from the failed sign-ins.
 The file is read through `GET /api/inquiries` (signed in only, newest first). It
 is never delivered: `isBlocked()` in `server.js` lets only `content.js` out of
 `data/`. Because it lives in `data/`, it is covered by the daily backup.
+
+Enter does not send the form. A browser submits as soon as Enter is pressed in
+a single-line field, which on this form meant one keystroke while typing the
+name sent a half-written enquiry and cleared everything. `js/contact.js`
+therefore blocks Enter in the input fields — but not on the submit button and
+not in the message box, where it makes a new line. Submitting from the keyboard
+still works by tabbing to the button; taking that away as well would lock out
+anyone filling in forms without a mouse.
 
 Validation before sending uses `form.checkValidity()`; the rules live in the HTML
 as `required` and `type="email"` and not a second time in the script. The status
@@ -601,7 +610,7 @@ sudo systemctl daemon-reload && sudo systemctl restart nickberdi
 |---|---|---|
 | `SMTP_USER` | — | the address the token belongs to |
 | `SMTP_PASS` | — | the generated token |
-| `MAIL_TO` | — | who gets told |
+| `MAIL_TO` | — | who gets told; several addresses separated by commas |
 | `SMTP_HOST` | `smtp.protonmail.ch` | |
 | `SMTP_PORT` | `587` | 587 upgrades with STARTTLS, 465 is TLS from the start |
 | `SMTP_SECURE` | from the port | `true` forces TLS from the first byte |
@@ -609,6 +618,31 @@ sudo systemctl daemon-reload && sudo systemctl restart nickberdi
 
 The address of the enquirer is set as `Reply-To`, so replying in Proton answers
 the sponsor directly rather than the website.
+
+`MAIL_TO` may name several recipients, separated by commas — each one gets its
+own `RCPT TO` and they are all listed in the `To:` header:
+
+```
+MAIL_TO=nick.privat@example.com, emma.berdi@gmx.ch
+```
+
+Worth knowing when picking the address: if two addresses belong to the **same**
+Proton account, a mail to one of them lands in that one shared mailbox. Sending
+to `nick@berdi-racing.com` therefore does not reach a separate inbox as long as
+that address is only an alias. Either name the address of the mailbox Nick
+actually signs into, or forward `nick@` onward in Proton's settings.
+
+The mail itself lives in `mail.js`, apart from the sending: it is pure
+formatting with no state, so it can be rendered and looked at without starting
+anything. It goes out as `multipart/alternative` — an HTML version in the
+colours of the site, and the same content as plain text underneath. Both,
+because a notification preview or a screen reader takes the text, and HTML on
+its own reads as a spam signal.
+
+Everything a sender wrote is escaped before it reaches the HTML; empty fields
+are left out instead of printing a dash; and the timestamp is shown as
+`14.09.2026, 16:54` in Zurich time rather than as a raw ISO string. German
+throughout, because Nick and Karin are the ones reading it.
 
 Checking: `journalctl -u nickberdi -n 20` states at start-up whether it is
 configured — `Mail: on, info@… -> nick@…` or `Mail: off (missing: …)`. After an

@@ -44,6 +44,25 @@
     return form.querySelector(":invalid");
   }
 
+  /* A browser submits a form as soon as Enter is pressed in a single-line
+     field. On this form that is a trap: one keystroke while filling in the
+     name sends a half-written enquiry and clears everything.
+
+     So Enter is blocked in the input fields — but deliberately not on the
+     button itself, and not in the message box, where it makes a new line.
+     Submitting from the keyboard therefore still works: tab to the button and
+     press Enter. Taking that away too would lock out anyone who fills in forms
+     without a mouse. */
+  form.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" || e.shiftKey || e.ctrlKey || e.metaKey) return;
+    var el = e.target;
+    if (!el || !el.tagName) return;
+    var tag = el.tagName.toUpperCase();
+    if (tag === "TEXTAREA") return;                       /* newline */
+    if (tag === "BUTTON" || el.type === "submit") return; /* meant it */
+    e.preventDefault();
+  });
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
 
